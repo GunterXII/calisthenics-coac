@@ -1,0 +1,10 @@
+variant persistence: PASS
+promote action: PASS
+keep current: PASS
+resume: PASS
+exit modal: PASS
+save draft: PASS
+discard draft: PASS
+progression visible: PASS
+sunday program: PASS
+loop progression: PASS

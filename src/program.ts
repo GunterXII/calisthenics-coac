@@ -1,0 +1,216 @@
+
+import type {Band,DayKey,DayProgram} from "./types";
+export const BAND_OPTIONS:Band[]=["None","Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"];
+export const HANDSTAND_CYCLES={
+  1:[
+    {id:"c1-1",name:"Floor Shoulder Opening",dose:"3 × 30 sec",timerSec:30},
+    {id:"c1-2",name:"Frog Stand",dose:"3 × max sec"},
+    {id:"c1-3",name:"Scapula Push-up",dose:"3 × 6–12 reps"},
+    {id:"c1-4",name:"Pike Hold",dose:"3 × max sec"},
+    {id:"c1-5",name:"Tucked Hollow Hold",dose:"3 × max sec"},
+  ],
+  2:[
+    {id:"c2-1",name:"Band Dislocator",dose:"3 × 5 reps"},
+    {id:"c2-2",name:"Reverse Wall HS Taps",dose:"3 × max sec"},
+    {id:"c2-3",name:"Scapula Pike Push-up",dose:"3 × 6–12 reps"},
+    {id:"c2-4",name:"Wall HS Hold",dose:"3 × max sec"},
+    {id:"c2-5",name:"Diagonal Hollow Hold",dose:"3 × max sec"},
+  ],
+  3:[
+    {id:"c3-1",name:"Wall Shoulder Opening",dose:"3 × 5 reps"},
+    {id:"c3-2",name:"Handstand Practice",dose:"5–10 × max sec"},
+    {id:"c3-3",name:"Scapula Wall HS Push-up",dose:"3 × 6–12 reps"},
+    {id:"c3-4",name:"Reverse Wall HS Hold",dose:"3 × max sec"},
+    {id:"c3-5",name:"Hollow Hold",dose:"3 × max sec"},
+  ]
+} as const;
+
+const pushWarmup=[
+ {id:"pw1",name:"General pulse + wrist flow",dose:"2 min"},
+ {id:"pw2",name:"Wrist pronation / supination",dose:"2 × 10 / side"},
+ {id:"pw3",name:"Band external rotation",dose:"2 × 12–15"},
+ {id:"pw4",name:"Band pull-apart",dose:"2 × 12–15"},
+ {id:"pw5",name:"Scapular push-up + lean",dose:"2 × 8–10"},
+];
+const pullWarmup=[
+ {id:"pl1",name:"Active hang + scap depression",dose:"2 × 15–20 sec"},
+ {id:"pl2",name:"Scapular pull-up",dose:"2 × 6–8"},
+ {id:"pl3",name:"Band straight-arm pulldown",dose:"2 × 12–15"},
+ {id:"pl4",name:"Band face pull",dose:"2 × 12–15"},
+ {id:"pl5",name:"Light band curl + elbow prep",dose:"1–2 × 15–20"},
+];
+
+
+export const PROGRESSIONS:Record<string,{current:string;next:string;rule:string;regression?:string;bandMode?:"assistance"|"resistance"|"none"}>= {
+ "pike":{current:"Pike Push-up",next:"Feet-Elevated Pike Push-up",rule:"3×10 with RIR ≥1 and clean ROM for 2 sessions",regression:"Standard Pike Push-up",bandMode:"none"},
+ "diamond":{current:"Diamond Push-up",next:"Feet-Elevated Diamond Push-up",rule:"3×15 with RIR ≥1 for 2 sessions",regression:"Standard Push-up",bandMode:"none"},
+ "archer-push":{current:"Archer Push-up",next:"Assisted One-Arm Push-up",rule:"3×8/side with balanced ROM for 2 sessions",regression:"Diamond Push-up",bandMode:"none"},
+ "deep":{current:"Deep Push-up",next:"Feet-Elevated Deep Push-up",rule:"10-min EMOM reaches coach upper range with <15% drop-off for 2 sessions",regression:"Standard Deep Push-up",bandMode:"resistance"},
+ "dips":{current:"Dips",next:"Band-Resisted / Deeper Dips",rule:"10-min EMOM reaches 30/min with stable form and RIR ≥2",regression:"Standard Dips",bandMode:"resistance"},
+ "high-pull":{current:"High Pull-up",next:"Higher Chest-to-Bar High Pull",rule:"4×5 with explosive height maintained",regression:"Chest-to-Bar Pull-up",bandMode:"none"},
+ "pullup":{current:"Pull-up",next:"Chest-to-Bar Pull-up",rule:"10-min EMOM reaches coach upper range with <15% drop-off",regression:"Band Pull-up",bandMode:"none"},
+ "close-chin":{current:"Close-Grip Chin-up",next:"Chest-to-Bar Chin-up",rule:"10-min EMOM reaches 10/min with stable ROM",regression:"Close-Grip Chin-up",bandMode:"none"},
+ "close-pull":{current:"Close-Grip Pull-up",next:"Chest-to-Bar Close Pull-up",rule:"10-min EMOM reaches 9/min with <15% drop-off",regression:"Close-Grip Pull-up",bandMode:"none"},
+ "archer-pull":{current:"Archer Pull-up",next:"Reduced-Assistance Archer / OAP Transition",rule:"3×8/side clean and symmetric",regression:"Assisted Archer Pull-up",bandMode:"assistance"},
+ "oap":{current:"One Arm Pull-up",next:"Strict BW OAP / Higher Consistency",rule:"6 quality attempts with ≥2 successful reps per arm",regression:"Assisted OAP",bandMode:"none"},
+ "oap-band":{current:"Assisted One Arm Pull-up",next:"Lighter Band OAP",rule:"3×5/arm with current band and RIR ≥1",regression:"Heavier Band OAP",bandMode:"assistance"},
+ "touch":{current:"Front Touch",next:"Longer Free Front Touch",rule:"Best hold improves and 4/5 free attempts are within 90% of best",regression:"Assisted Front Touch",bandMode:"none"},
+ "touch-band":{current:"Assisted Front Touch",next:"Lighter Band Front Touch",rule:"3×8 sec clean holds with current band",regression:"Heavier Band Front Touch",bandMode:"assistance"},
+ "flpu":{current:"Full Front Lever Pull-up",next:"Cleaner / Higher Full FL Pull-up",rule:"5×4 strict full-position reps with no form loss",regression:"Band-Assisted FL Pull-up",bandMode:"none"},
+ "flpu-band":{current:"Band-Assisted FL Pull-up",next:"Lighter Band FL Pull-up",rule:"3×6 clean reps with current band",regression:"Heavier Band FL Pull-up",bandMode:"assistance"},
+ "curl-a":{current:"Band Curl",next:"Heavier Band Curl",rule:"3×30 with RIR ≥1 and strict ROM",regression:"Lighter Band Curl",bandMode:"resistance"},
+ "curl-b":{current:"Band Curl",next:"Heavier Band Curl",rule:"3×30 with RIR ≥1 and strict ROM",regression:"Lighter Band Curl",bandMode:"resistance"},
+ "curl-c":{current:"Band Curl",next:"Heavier Band Curl",rule:"3×30 with RIR ≥1 and strict ROM",regression:"Lighter Band Curl",bandMode:"resistance"},
+ "lat-a":{current:"Band Lateral Raise",next:"Heavier Band / Strict Higher Tension",rule:"3×25 with no swing and RIR ≥1",regression:"Lighter Band",bandMode:"resistance"},
+ "lat-b":{current:"Band Lateral Raise",next:"Heavier Band / Strict Higher Tension",rule:"3×25 with no swing and RIR ≥1",regression:"Lighter Band",bandMode:"resistance"},
+ "lat-c":{current:"Band Lateral Raise",next:"Heavier Band / Strict Higher Tension",rule:"3×25 with no swing and RIR ≥1",regression:"Lighter Band",bandMode:"resistance"},
+ "tri-a":{current:"Band Triceps Pressdown",next:"Heavier Band Pressdown",rule:"3×30 with RIR ≥1",regression:"Lighter Band Pressdown",bandMode:"resistance"},
+ "tri-b":{current:"Band Overhead Triceps Extension",next:"Heavier Band Extension",rule:"3×30 with RIR ≥1",regression:"Lighter Band Extension",bandMode:"resistance"},
+ "tri-c":{current:"Band Triceps Pressdown",next:"Heavier Band Pressdown",rule:"3×30 with RIR ≥1",regression:"Lighter Band Pressdown",bandMode:"resistance"},
+ "bulgarian":{current:"Bulgarian Split Squat",next:"Band-Resisted Bulgarian Split Squat",rule:"4×10/leg with RIR 1–2 and stable depth",regression:"Bodyweight Bulgarian",bandMode:"resistance"},
+ "pistol":{current:"Assisted Pistol",next:"Strict Pistol Squat",rule:"3×10/leg with minimal assistance and controlled depth",regression:"Box/Assisted Pistol",bandMode:"none"},
+ "sl-rdl":{current:"Single-Leg RDL",next:"Heavier-Band Single-Leg RDL",rule:"3×12/leg with slow eccentric and balance",regression:"Bodyweight Single-Leg Hinge",bandMode:"resistance"},
+ "calf":{current:"Single-Leg Calf Raise",next:"Deficit Single-Leg Calf Raise",rule:"3×20/leg with 2-sec peak hold",regression:"Two-Leg Calf Raise",bandMode:"none"},
+ "band-legcurl":{current:"Band Leg Curl",next:"Heavier-Band Leg Curl",rule:"3×20/leg with full squeeze",regression:"Lighter Band Leg Curl",bandMode:"resistance"},
+ "jump-lunge":{current:"Jump Lunge",next:"Higher / Faster Split Jump",rule:"3×8/leg with contacts staying crisp",regression:"Reverse Lunge",bandMode:"none"},
+ "broad-jump":{current:"Broad Jump",next:"Higher-Quality / Longer Broad Jump",rule:"4×3 with consistent landing and distance",regression:"Low Intensity Broad Jump",bandMode:"none"},
+ "cmj":{current:"Countermovement Jump",next:"Higher-Quality / Higher Vertical Jump",rule:"4×3 with consistent take-off mechanics",regression:"Snap-down + Jump",bandMode:"none"}
+};
+
+
+export const PROGRESSION_LADDERS:Record<string,{id:string;name:string}[]>={
+  pike:[
+    {id:"pike",name:"Pike Push-up"},
+    {id:"pike-feet",name:"Feet-Elevated Pike Push-up"},
+    {id:"wall-hspu",name:"Wall HSPU"},
+    {id:"deficit-wall-hspu",name:"Deficit Wall HSPU"},
+    {id:"freestanding-hspu",name:"Freestanding HSPU"}
+  ],
+  diamond:[
+    {id:"diamond",name:"Diamond Push-up"},
+    {id:"diamond-feet",name:"Feet-Elevated Diamond Push-up"},
+    {id:"diamond-deep-feet",name:"Deep Feet-Elevated Diamond Push-up"}
+  ],
+  "archer-push":[
+    {id:"archer-push",name:"Archer Push-up"},
+    {id:"assisted-oap-push",name:"Assisted One-Arm Push-up"},
+    {id:"oap-push",name:"One-Arm Push-up"}
+  ],
+  pullup:[
+    {id:"pullup",name:"Pull-up"},
+    {id:"chest-pull",name:"Chest-to-Bar Pull-up"},
+    {id:"high-pull-prog",name:"High Pull-up"}
+  ],
+  "high-pull":[
+    {id:"high-pull",name:"High Pull-up"},
+    {id:"higher-high-pull",name:"Higher Chest-to-Bar High Pull"},
+    {id:"sternum-high-pull",name:"Sternum High Pull"}
+  ],
+  "close-chin":[
+    {id:"close-chin",name:"Close-Grip Chin-up"},
+    {id:"chest-chin",name:"Chest-to-Bar Chin-up"}
+  ],
+  "close-pull":[
+    {id:"close-pull",name:"Close-Grip Pull-up"},
+    {id:"close-chest",name:"Chest-to-Bar Close Pull-up"}
+  ],
+  "oap-band":[
+    {id:"oap-band-purple",name:"Assisted OAP — Purple"},
+    {id:"oap-band-blue",name:"Assisted OAP — Blue"},
+    {id:"oap-band-none",name:"Bodyweight OAP"}
+  ],
+  "touch-band":[
+    {id:"touch-band-purple",name:"Assisted Front Touch — Purple"},
+    {id:"touch-band-blue",name:"Assisted Front Touch — Blue"},
+    {id:"touch-band-none",name:"Free Front Touch"}
+  ],
+  flpu:[
+    {id:"flpu",name:"Full Front Lever Pull-up"},
+    {id:"flpu-clean",name:"Full FL Pull-up — Cleaner / Higher"},
+    {id:"flpu-slow",name:"Full FL Pull-up — Slower Eccentric"}
+  ],
+  "flpu-band":[
+    {id:"flpu-band-purple",name:"Band FL Pull-up — Purple"},
+    {id:"flpu-band-blue",name:"Band FL Pull-up — Blue"},
+    {id:"flpu-band-none",name:"Full FL Pull-up"}
+  ],
+  bulgarian:[
+    {id:"bulgarian",name:"Bulgarian Split Squat — Bodyweight"},
+    {id:"bulgarian-band",name:"Band-Resisted Bulgarian Split Squat"},
+    {id:"bulgarian-deficit",name:"Deficit Band Bulgarian Split Squat"}
+  ],
+  pistol:[
+    {id:"pistol-assisted",name:"Assisted Pistol"},
+    {id:"pistol",name:"Strict Pistol Squat"},
+    {id:"pistol-deficit",name:"Deficit Pistol Squat"}
+  ]
+};
+
+export const PROGRAM:Record<DayKey,DayProgram>={
+ Monday:{title:"PUSH A",subtitle:"Handstand • Pike • Dips",warmup:pushWarmup,blocks:[
+  {id:"hs-a",kind:"HANDSTAND",name:"Handstand 30-Day Tutorial",detail:"Cycle 1–3, 10 Push exposures each.",target:"Tutorial",rest:0,microSteps:HANDSTAND_CYCLES[1]},
+  {id:"pike",kind:"PERFORMANCE",name:"Pike Push-up",detail:"3 × 6–10 • RIR 1–2",sets:3,target:"6–10",rest:180,previousMode:"reps"},
+  {id:"dips",kind:"EMOM",name:"Dips",detail:"10 min EMOM • starting personal target is editable.",minutes:10,target:"20–30/min",rest:60,previousMode:"emom"},
+  {id:"lat-a",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–25 • choose band by RIR",sets:3,target:"15–25",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"},
+  {id:"tri-a",kind:"ACCESSORY",name:"Band Triceps Pressdown",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"core-a",kind:"CORE",name:"Hollow Body Hold",detail:"3 × 20–40 sec",sets:3,target:"20–40 sec",rest:75,previousMode:"seconds"}
+ ]},
+ Tuesday:{title:"PULL A",subtitle:"Front Touch • High Pull • Pull-up",warmup:pullWarmup,blocks:[
+  {id:"touch",kind:"SKILL_STATIC",name:"Front Touch",detail:"3 quality free attempts • 5-second countdown • 8–12 sec coach range",sets:3,target:"8–12 sec",rest:210,countdown:true,previousMode:"seconds"},
+  {id:"touch-band",kind:"VOLUME_SKILL",name:"Assisted Front Touch",detail:"3 × 5–8 sec • heavy loop after free work",sets:3,target:"5–8 sec",rest:150,bandOptions:["Purple 25–40 lb","Blue 15–25 lb"],defaultBand:"Purple 25–40 lb",countdown:true,previousMode:"seconds"},
+  {id:"high-pull",kind:"PERFORMANCE",name:"High Pull-up",detail:"4 × 3–5",sets:4,target:"3–5",rest:180,previousMode:"reps"},
+  {id:"pullup",kind:"EMOM",name:"Pull-up",detail:"10 min EMOM",minutes:10,target:"8–12/min",rest:60,previousMode:"emom"},
+  {id:"curl-a",kind:"ACCESSORY",name:"Band Curl",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"knee",kind:"CORE",name:"Hanging Knee Raise",detail:"3 × 10–15",sets:3,target:"10–15",rest:75,previousMode:"reps"}
+ ]},
+ Wednesday:{title:"PUSH B",subtitle:"Handstand • Diamond • Push-up",warmup:pushWarmup,blocks:[
+  {id:"hs-b",kind:"HANDSTAND",name:"Handstand 30-Day Tutorial",detail:"Cycle 1–3, 10 Push exposures each.",target:"Tutorial",rest:0,microSteps:HANDSTAND_CYCLES[1]},
+  {id:"diamond",kind:"PERFORMANCE",name:"Diamond Push-up",detail:"3 × 8–15 • RIR 1–2",sets:3,target:"8–15",rest:150,previousMode:"reps"},
+  {id:"pushup",kind:"EMOM",name:"Push-up",detail:"10 min EMOM",minutes:10,target:"15–18/min",rest:60,previousMode:"emom"},
+  {id:"lat-b",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–25",sets:3,target:"15–25",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"},
+  {id:"tri-b",kind:"ACCESSORY",name:"Band Overhead Triceps Extension",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"reverse-crunch",kind:"CORE",name:"Reverse Crunch / Hip Lift",detail:"3 × 12–20",sets:3,target:"12–20",rest:75,previousMode:"reps"}
+ ]},
+ Thursday:{title:"PULL B",subtitle:"OAP • Archer • Close-grip Chin",warmup:pullWarmup,blocks:[
+  {id:"oap",kind:"SKILL_REPS",name:"One Arm Pull-up",detail:"6–8 quality attempts • alternate arms",sets:6,target:"1–2 / arm",rest:210,previousMode:"reps"},
+  {id:"oap-band",kind:"VOLUME_SKILL",name:"Assisted One Arm Pull-up",detail:"3 × 2–5 / arm",sets:3,target:"2–5 / arm",rest:180,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"archer-pull",kind:"PERFORMANCE",name:"Archer Pull-up",detail:"3 × 5–8 / side",sets:3,target:"5–8 / side",rest:165,previousMode:"reps"},
+  {id:"close-chin",kind:"EMOM",name:"Close-Grip Chin-up",detail:"10 min EMOM",minutes:10,target:"8–10/min",rest:60,previousMode:"emom"},
+  {id:"curl-b",kind:"ACCESSORY",name:"Band Curl",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"leg-raise",kind:"CORE",name:"Hanging Leg Raise",detail:"3 × 8–15",sets:3,target:"8–15",rest:90,previousMode:"reps"}
+ ]},
+ Friday:{title:"PUSH C",subtitle:"Handstand • Archer Push-up • Deep Push-up",warmup:pushWarmup,blocks:[
+  {id:"hs-c",kind:"HANDSTAND",name:"Handstand 30-Day Tutorial",detail:"Cycle 1–3, 10 Push exposures each.",target:"Tutorial",rest:0,microSteps:HANDSTAND_CYCLES[1]},
+  {id:"archer-push",kind:"PERFORMANCE",name:"Archer Push-up",detail:"3 × 5–8 / side",sets:3,target:"5–8 / side",rest:165,previousMode:"reps"},
+  {id:"deep",kind:"EMOM",name:"Deep Push-up",detail:"10 min EMOM",minutes:10,target:"10–12/min",rest:60,previousMode:"emom"},
+  {id:"lat-c",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–25",sets:3,target:"15–25",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"},
+  {id:"tri-c",kind:"ACCESSORY",name:"Band Triceps Pressdown",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"body-saw",kind:"CORE",name:"Body Saw / Plank Saw",detail:"3 × 10–20",sets:3,target:"10–20",rest:75,previousMode:"reps"}
+ ]},
+ Saturday:{title:"PULL C",subtitle:"Full FL Pull-up • High Pull • Close-grip Pull",warmup:pullWarmup,blocks:[
+  {id:"flpu",kind:"SKILL_REPS",name:"Full Front Lever Pull-up",detail:"5–6 quality sets • 1–3 reps",sets:5,target:"2–4",rest:210,previousMode:"reps"},
+  {id:"flpu-band",kind:"VOLUME_SKILL",name:"Band-Assisted FL Pull-up",detail:"3 × 3–6",sets:3,target:"3–6",rest:180,bandOptions:["Blue 15–25 lb","Purple 25–40 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"chest-high",kind:"PERFORMANCE",name:"Chest-to-Bar / High Pull-up",detail:"3 × 5–8",sets:3,target:"5–8",rest:180,previousMode:"reps"},
+  {id:"close-pull",kind:"EMOM",name:"Close-Grip Pull-up",detail:"10 min EMOM",minutes:10,target:"7–9/min",rest:60,previousMode:"emom"},
+  {id:"curl-c",kind:"ACCESSORY",name:"Band Curl",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"hollow-rocks",kind:"CORE",name:"Hollow-to-Arch Rocks",detail:"3 × 10–20",sets:3,target:"10–20",rest:60,previousMode:"reps"}
+ ]},
+ Sunday:{title:"LEGS",subtitle:"Power • Unilateral strength • Hypertrophy",warmup:[
+  {id:"leg-ankle",name:"Ankle rocks",dose:"2 × 10 / side"},
+  {id:"leg-swings",name:"Leg swings",dose:"2 × 10 / side"},
+  {id:"leg-squat",name:"Squat-to-stand",dose:"2 × 6"},
+  {id:"leg-lunge",name:"Reverse lunge + reach",dose:"1 × 6 / side"},
+  {id:"leg-pogo",name:"Pogo hops",dose:"2 × 15"},
+  {id:"leg-snap",name:"Snap-down to athletic stance",dose:"2 × 5"},
+  {id:"leg-jump-prep",name:"Low broad jump rehearsal",dose:"2 × 2"}
+ ],blocks:[
+  {id:"broad-jump",kind:"PERFORMANCE",name:"Broad Jump",detail:"4 × 3 • maximal horizontal power • full reset",sets:4,target:"3",rest:150,previousMode:"reps"},
+  {id:"cmj",kind:"PERFORMANCE",name:"Countermovement Jump",detail:"4 × 3 • maximal vertical jump • full reset",sets:4,target:"3",rest:150,previousMode:"reps"},
+  {id:"bulgarian",kind:"ACCESSORY",name:"Bulgarian Split Squat",detail:"4 × 6–10 / leg • RIR 1–2 • add band when BW is too easy",sets:4,target:"6–10 / leg",rest:150,bandOptions:["None","Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb"],defaultBand:"None",previousMode:"reps"},
+  {id:"pistol",kind:"ACCESSORY",name:"Pistol Squat / Assisted Pistol",detail:"3 × 6–10 / leg • controlled depth",sets:3,target:"6–10 / leg",rest:120,previousMode:"reps"},
+  {id:"sl-rdl",kind:"ACCESSORY",name:"Single-Leg RDL with Band",detail:"3 × 8–12 / leg • slow eccentric",sets:3,target:"8–12 / leg",rest:100,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"},
+  {id:"jump-lunge",kind:"PERFORMANCE",name:"Split Jump / Jump Lunge",detail:"3 × 5–8 / leg • stop before speed drops",sets:3,target:"5–8 / leg",rest:120,previousMode:"reps"},
+  {id:"calf",kind:"ACCESSORY",name:"Single-Leg Calf Raise",detail:"3 × 12–20 / leg • 2-sec peak hold",sets:3,target:"12–20 / leg",rest:75,previousMode:"reps"},
+  {id:"band-legcurl",kind:"ACCESSORY",name:"Band Leg Curl",detail:"3 × 12–20 / leg",sets:3,target:"12–20 / leg",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"}
+ ]}
+};

@@ -1,0 +1,10 @@
+V8 PARSER HOTFIX
+- SetBlock JSX conditional expression closed: PASS
+- EMOM JSX conditional expression closed: PASS
+- Single Metric declaration: PASS
+- No window.prompt: PASS
+- Report history: PASS
+- Session detail: PASS
+- Export/import backup: PASS
+- Timestamp timers: PASS
+- Wake Lock: PASS

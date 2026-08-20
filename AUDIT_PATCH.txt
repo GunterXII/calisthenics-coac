@@ -1,0 +1,6 @@
+SetBlock single: PASS
+No prompt: PASS
+Coach target label: PASS
+Today target label: PASS
+Reps completed label: PASS
+Set cap: PASS

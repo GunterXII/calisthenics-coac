@@ -1,0 +1,6 @@
+SetBlock single: PASS
+Emom single: PASS
+Set edit close: PASS
+EMOM edit close: PASS
+No prompt: PASS
+No adjacent-edit conditional pattern: PASS
