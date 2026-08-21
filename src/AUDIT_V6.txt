@@ -1,0 +1,12 @@
+single Metric: PASS
+no window.prompt: PASS
+Reports nav: PASS
+Readiness: PASS
+Warmup: PASS
+Handstand cycles: PASS
+Weekly report: PASS
+Static countdown: PASS
+Skip rest: PASS
+Skip exercise: PASS
+Tailwind: PASS
+localStorage: PASS

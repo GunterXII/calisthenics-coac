@@ -1,0 +1,10 @@
+DayKey Sunday: PASS
+Sunday program: PASS
+Progression map: PASS
+Progression UI: PASS
+Fixed-window EMOM: PASS
+Handstand warmup: PASS
+Leg warmup: PASS
+No primary week nav: FAIL
+Export backup present: PASS
+Target logic: PASS

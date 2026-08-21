@@ -1,0 +1,16 @@
+V7 audit
+PASS: 3-tab hierarchy (Today / Progress / Reports)
+PASS: readiness incl. weight
+PASS: warm-up player
+PASS: handstand checklist / 3 cycles x 10 Push exposures
+PASS: static-skill countdown and live timer
+PASS: EMOM auto-minute progression and per-minute logging
+PASS: coach target vs today target
+PASS: set-by-set previous comparison
+PASS: OAP / archer right-left tracking
+PASS: skip / incomplete / modified status
+PASS: session notes
+PASS: weekly coaching report
+PASS: weight trend signal
+PASS: localStorage persistence
+PASS: Tailwind + TypeScript + Vite
