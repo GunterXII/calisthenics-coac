@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState,type FormEvent} from "react";
 import {createRoot} from "react-dom/client";
 import {ArrowLeft,Download,Minus,Play,Plus,Upload,LogOut,RefreshCw,ChevronUp,ChevronDown,Trash2,PlusCircle,History,MessageSquare,RotateCcw,Volume2,VolumeX} from "lucide-react";
-import {BAND_OPTIONS,HANDSTAND_CYCLES,PROGRAM,PROGRESSIONS,PROGRESSION_LADDERS} from "./program";
+import {BAND_OPTIONS,PROGRAM,PROGRESSIONS,PROGRESSION_LADDERS} from "./program";
 import {EXERCISE_CATALOG,type ExerciseCatalogItem} from "./exercises";
 import {POST_WORKOUT_MOBILITY,type MobilityExercise} from "./mobility";
 import type {Band,BlockKind,BlockStatus,DayKey,DayProgram,ExerciseBlock,SessionSummary,WorkoutLog,MobilitySession,MobilityLog} from "./types";
@@ -602,10 +602,10 @@ function ProgressionHint({block}:{block:ExerciseBlock}){
 
 function Today({day,setDay,start,draft,onResume}:{day:DayKey;setDay:(x:DayKey)=>void;start:()=>void;draft:any;onResume:()=>void}){
  const p=effectiveProgram(day),push=["Monday","Wednesday","Friday"].includes(day);
- const exp=getSessions().filter(s=>["Monday","Wednesday","Friday"].includes(s.day)).length+1,cycle=Math.min(3,Math.ceil(exp/10)),dIn=Math.min(10,((exp-1)%10)+1),last=latestSession(day);
+ const last=latestSession(day);
  return <div>
   <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-   <div><div className="eyebrow">TODAY</div><h1>{p.title}</h1><p className="sub">{p.subtitle}</p>{push&&<div className="mt-2 text-[10px] text-violet2">HANDSTAND · CYCLE {cycle} · DAY {dIn}/10</div>}</div>
+   <div><div className="eyebrow">TODAY</div><h1>{p.title}</h1><p className="sub">{p.subtitle}</p>{push&&<div className="mt-2 text-[10px] text-violet2">PUSH GOALS · 100 PUSH-UPS / 50 DIPS</div>}</div>
    <button className="primary-cta w-full md:w-auto" onClick={draft?onResume:start}>{draft?"RESUME WORKOUT":"START WORKOUT"}</button>
   </div>
   <div className="my-7 grid grid-cols-7 gap-1">{DAYS.map(d=><button key={d} onClick={()=>setDay(d)} className={`rounded-lg border px-1 py-2 text-[9px] font-extrabold ${day===d?"border-transparent bg-violet-600 text-white":"border-line bg-panel text-zinc-600"}`}>{d.slice(0,3).toUpperCase()}</button>)}</div>
@@ -635,7 +635,7 @@ function trendValues(id:string,kind:"static"|"reps"|"emom"){
 }
 function Progress({refresh}:{refresh:number}){
  const ss=getSessions(),logs=getLogs(),weights=ss.map(s=>s.readiness?.weightKg).filter((x):x is number=>typeof x==="number");
- const touch=trendValues("touch","static"),fl=trendValues("flpu","reps"),oap=trendValues("oap","reps"),dips=trendValues("dips","emom");
+ const touch=trendValues("touch","static"),fl=trendValues("flpu","reps"),oap=trendValues("oap","reps"),pushBest=goalTrend("push-up"),dipBest=goalTrend("dips");
  const [selected,setSelected]=useState<string|null>(null);
  const prs=buildPrVault();
  const milestones=buildMilestones();
@@ -643,7 +643,7 @@ function Progress({refresh}:{refresh:number}){
   <div className="eyebrow">PROGRESS</div><h1>Performance</h1><p className="sub">Your current level, your bests, and the next useful milestone.</p>
   <div className="mt-6 grid grid-cols-3 gap-2"><Metric label="SESSIONS" value={ss.length}/><Metric label="BLOCKS" value={logs.length}/><Metric label="EMOM" value={logs.filter(x=>x.kind==="EMOM").length}/></div>
   <div className="mt-4 grid gap-2 md:grid-cols-4"><SmallMetric label="WEIGHT NOW" value={weights.length?`${weights[weights.length-1]!.toFixed(1)} kg`:"—"}/><SmallMetric label="FRONT TOUCH" value={bestStatic("touch")}/><SmallMetric label="FL PULL-UP" value={bestReps("flpu")}/><SmallMetric label="OAP" value={bestReps("oap")}/></div>
-  <div className="mt-8"><div className="section-kicker">KEY TRENDS</div><div className="mt-3 grid gap-2 md:grid-cols-2"><TrendRow name="FRONT TOUCH" values={touch} unit="s"/><TrendRow name="FL PULL-UP" values={fl} unit="reps"/><TrendRow name="OAP" values={oap} unit="reps"/><TrendRow name="DIPS EMOM" values={dips} unit="reps"/></div></div>
+  <div className="mt-8"><div className="section-kicker">KEY TRENDS</div><div className="mt-3 grid gap-2 md:grid-cols-2"><TrendRow name="FRONT TOUCH" values={touch} unit="s"/><TrendRow name="FL PULL-UP" values={fl} unit="reps"/><TrendRow name="OAP" values={oap} unit="reps"/><TrendRow name="PUSH-UP BEST SET" values={pushBest} unit="reps"/><TrendRow name="DIPS BEST SET" values={dipBest} unit="reps"/></div></div>
   <div className="mt-8"><div className="flex items-end justify-between"><div><div className="section-kicker">PR VAULT</div><p className="mt-1 text-[10px] text-zinc-600">Best recorded performance, not today's target.</p></div></div>
     <div className="mt-3 grid gap-2 sm:grid-cols-2">{prs.map(pr=><button key={pr.id} className="rounded-2xl border border-line bg-panel p-4 text-left transition hover:border-violet-500/40" onClick={()=>setSelected(pr.id)}>
       <div className="flex items-start justify-between gap-3"><div><span className="field-label">{pr.category}</span><div className="mt-1 text-sm font-extrabold">{pr.name}</div></div><span className="text-[9px] text-zinc-600">{pr.date?new Date(pr.date).toLocaleDateString():"—"}</span></div>
@@ -677,12 +677,43 @@ function bestReps(id:string){const vals=getLogs().filter(l=>l.exerciseId===id).f
 function SmallMetric({label,value}:{label:string;value:string}){return <div className="rounded-2xl border border-line bg-panel p-4"><span className="text-[9px] text-zinc-600">{label}</span><b className="mt-2 block text-sm">{value}</b></div>}
 function Metric({label,value}:{label:string;value:number}){return <div className="rounded-2xl border border-line bg-panel p-4"><span className="text-[9px] text-zinc-600">{label}</span><b className="mt-2 block text-2xl">{value}</b></div>}
 
+
+function goalLogs(goal:"push-up"|"dips"){
+ const logs=getLogs().filter(l=>l.status==="complete"&&l.kind==="PERFORMANCE");
+ if(goal==="push-up") return logs.filter(l=>/(^|\s)Push-up(\s|$)|Push-up Long Set/.test(l.exerciseName) && !/Pike|Diamond|Close-Grip|Archer|Pseudo/.test(l.exerciseName));
+ return logs.filter(l=>l.exerciseName==="Dips"||l.exerciseName==="Dips Long Set");
+}
+function goalTrend(goal:"push-up"|"dips"){
+ return goalLogs(goal).sort((a,b)=>a.date-b.date).map(l=>Math.max(...(l.result.reps||[0])));
+}
+function GoalProgressCard({goal,target,label}:{goal:"push-up"|"dips";target:number;label:string}){
+ const vals=goalTrend(goal),best=vals.length?Math.max(...vals):0,last=vals.slice(-3),prev=vals.slice(-6,-3);
+ const lastAvg=last.length?last.reduce((a,b)=>a+b,0)/last.length:0;
+ const prevAvg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:0;
+ const delta=prev.length&&prevAvg?((lastAvg-prevAvg)/prevAvg)*100:null;
+ const pct=Math.min(100,(best/target)*100);
+ const status=best>=target?"TARGET REACHED":delta!==null&&delta>3?"PROGRESSING":delta!==null&&delta<-8?"CHECK FATIGUE":"BUILDING";
+ return <div className="rounded-2xl border border-line bg-panel p-4">
+   <div className="flex items-start justify-between gap-3"><div><div className="field-label">{label}</div><div className="mt-1 text-2xl font-extrabold">{best||"—"} <span className="text-xs font-bold text-zinc-600">/ {target}</span></div></div><span className={`text-[8px] font-extrabold tracking-[.12em] ${status==="TARGET REACHED"?"text-emerald-400":status==="PROGRESSING"?"text-violet2":status==="CHECK FATIGUE"?"text-amber-300":"text-zinc-500"}`}>{status}</span></div>
+   <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-900"><div className="h-full rounded-full bg-violet-500 transition-all" style={{width:`${pct}%`}}/></div>
+   <div className="mt-3 grid grid-cols-3 gap-2 text-[9px]"><div><span className="field-label">BEST</span><b className="mt-1 block text-white">{best||"—"}</b></div><div><span className="field-label">LAST</span><b className="mt-1 block text-white">{last.length?last[last.length-1]:"—"}</b></div><div><span className="field-label">TREND</span><b className="mt-1 block text-white">{delta===null?"—":`${delta>=0?"+":""}${delta.toFixed(0)}%`}</b></div></div>
+   <p className="mt-3 text-[9px] leading-4 text-zinc-600">{best>=target?"Goal reached. Maintain it periodically while keeping most training submaximal.":status==="CHECK FATIGUE"?"Recent performance is down versus the preceding exposures. Do not add volume until recovery and technique are back on track.":"Use the long-set day to move the best set upward gradually; use EMOM/volume days to build capacity without testing max every session."}</p>
+ </div>
+}
+function PushGoalDashboard(){
+ return <div className="mt-6 rounded-2xl border border-violet-500/15 bg-violet-500/5 p-4">
+   <div className="flex items-end justify-between gap-3"><div><div className="section-kicker">COACH GOALS</div><p className="mt-1 text-[9px] text-zinc-500">The two outcomes currently driving the Push program.</p></div><span className="tag">100 / 50</span></div>
+   <div className="mt-3 grid gap-2 md:grid-cols-2"><GoalProgressCard goal="push-up" target={100} label="STANDARD PUSH-UP · BEST SINGLE SET"/><GoalProgressCard goal="dips" target={50} label="DIPS · BEST SINGLE SET"/></div>
+ </div>
+}
+
 function Reports({refresh}:{refresh:number}){
  const [offset,setOffset]=useState(0),[copied,setCopied]=useState(false),[selected,setSelected]=useState<string|null>(null),[showWeekly,setShowWeekly]=useState(false);
  const sessions=getSessions().sort((a,b)=>b.date-a.date),weekStart=Date.now()-7*86400000,weekSessions=sessions.filter(s=>s.date>=weekStart),weekReps=weekSessions.reduce((a,s)=>a+s.totalReps,0),weekEmom=weekSessions.reduce((a,s)=>a+s.emomReps,0),best=weekSessions.reduce((m,s)=>Math.max(m,s.bestSkillSeconds),0),report=makeWeeklyReport(offset);
  const copy=async()=>{try{await navigator.clipboard.writeText(report);setCopied(true);setTimeout(()=>setCopied(false),1200)}catch{}};
  return <div>
   <div className="eyebrow">PROGRESS</div><h1>Reports</h1>
+  <PushGoalDashboard/>
   <div className="mt-5 grid grid-cols-3 gap-2"><Metric label="WORKOUTS" value={weekSessions.length}/><Metric label="REPS" value={weekReps}/><Metric label="EMOM" value={weekEmom}/></div>
   <div className="mt-2 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between"><div><div className="field-label">BEST STATIC</div><div className="mt-1 text-xl font-extrabold">{best?`${best.toFixed(1)}s`:"—"}</div></div><div className="text-right"><div className="field-label">CURRENT WEEK</div><div className="mt-1 text-sm font-bold">{weekSessions.length} sessions</div></div></div></div>
   <div className="mt-6"><div className="section-kicker">RECENT SESSIONS</div>{sessions.slice(0,12).map(s=><button key={s.id} onClick={()=>setSelected(s.id)} className={`history-card ${selected===s.id?"selected":""}`}><div><b>{s.day}</b><span>{new Date(s.date).toLocaleDateString()}</span></div><span>{Math.round(s.durationSec/60)} min · {s.totalReps} reps</span></button>)}{!sessions.length&&<p className="mt-3 text-xs text-zinc-600">No completed sessions yet.</p>}</div>
@@ -921,7 +952,6 @@ function defaultBandFor(block:ExerciseBlock):Band{
 }
 
 function BlockPlayer({block,day,onComplete,onTick,vibration,sound,onStarted,existing,onProgress}:{block:ExerciseBlock;day:DayKey;onComplete:(l:WorkoutLog)=>void;onTick?:()=>void;vibration:boolean;sound:boolean;onStarted:()=>void;existing?:WorkoutLog;onProgress:(l:WorkoutLog)=>void}){
- if(block.kind==="HANDSTAND")return <Handstand block={block} day={day} onComplete={onComplete} onStarted={onStarted}/>;
  if(block.kind==="SKILL_STATIC"||block.previousMode==="seconds")return <StaticSkill block={block} day={day} onComplete={onComplete} onStarted={onStarted} sound={sound} vibration={vibration} existing={existing} onProgress={onProgress}/>;
  if(block.kind==="EMOM")return <Emom block={block} day={day} onComplete={onComplete} onStarted={onStarted} sound={sound} vibration={vibration} existing={existing} onProgress={onProgress}/>;
  if(block.id==="oap"||block.id==="oap-band"||block.id==="archer-pull"||block.id==="archer-push")return <SideSetBlock block={block} day={day} onComplete={onComplete} onStarted={onStarted} sound={sound} vibration={vibration} existing={existing} onProgress={onProgress}/>;
@@ -1019,10 +1049,6 @@ function StaticSkill({block,day,onComplete,onStarted,sound,vibration,existing,on
  </div>
 }
 
-function Handstand({block,day,onComplete,onStarted}:{block:ExerciseBlock;day:DayKey;onComplete:(l:WorkoutLog)=>void;onStarted:()=>void}){
- const pushExposures=getSessions().filter(s=>["Monday","Wednesday","Friday"].includes(s.day)).length+1,cycle=Math.min(3,Math.ceil(pushExposures/10)),dayIn=Math.min(10,((pushExposures-1)%10)+1),steps=(HANDSTAND_CYCLES as any)[cycle],[done,setDone]=useState<boolean[]>(steps.map(()=>false)),all=done.every(Boolean);
- return <div className="flex flex-1 flex-col"><div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4"><div className="eyebrow">CYCLE {cycle} · DAY {dayIn}/10</div><p className="mt-1 text-xs text-muted">One Push exposure = one tutorial day.</p></div><div className="mt-4 grid gap-2">{steps.map((s:any,i:number)=><button key={s.id} onClick={()=>{onStarted();setDone(v=>v.map((x,j)=>j===i?!x:x))}} className={`flex items-center justify-between rounded-xl border p-3 text-left ${done[i]?"border-violet-500/30 bg-violet-500/10":"border-line bg-panel"}`}><div><strong className="text-[12px]">{s.name}</strong><p className="mt-1 text-[10px] text-muted">{s.dose}</p></div><span className={`text-[10px] font-bold ${done[i]?"text-violet2":"text-zinc-600"}`}>{done[i]?"DONE":"CHECK"}</span></button>)}</div><div className="mt-auto grid grid-cols-2 gap-2 pb-4 pt-6"><button disabled={!all} className="primary-cta disabled:opacity-30" onClick={()=>onComplete({id:crypto.randomUUID(),date:Date.now(),day,exerciseId:block.id,exerciseName:block.name,kind:block.kind,status:"complete",result:{note:`Cycle ${cycle} day ${dayIn} complete`}})}>SAVE & NEXT</button>{done.some(Boolean)&&!all&&<button className="secondary-cta" onClick={()=>onComplete({id:crypto.randomUUID(),date:Date.now(),day,exerciseId:block.id,exerciseName:block.name,kind:block.kind,status:"incomplete",result:{note:`Cycle ${cycle} day ${dayIn} incomplete`}})}>SAVE INCOMPLETE</button>}</div></div>
-}
 function Summary({session,close,onSave}:{session:SessionSummary;close:()=>void;onSave:(s:SessionSummary)=>void}){
  const [note,setNote]=useState(session.sessionNote||""),[saved,setSaved]=useState(false),[copiedSummary,setCopiedSummary]=useState(false),[mode,setMode]=useState<"summary"|"mobility">("summary"),[mobilityDone,setMobilityDone]=useState(false),[sessionFeel,setSessionFeel]=useState(""),[showDetails,setShowDetails]=useState(false);
  const coachNote=[sessionFeel?`SESSION FEEL: ${sessionFeel}`:"",note.trim()].filter(Boolean).join("\n");
