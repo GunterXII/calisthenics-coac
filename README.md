@@ -1,51 +1,19 @@
-# Calisthenics Coach V8 — Production Polish
+# Calisthenics Coach V19
 
-React + TypeScript + Vite + Tailwind + lucide-react.
+Personal, campetto-first calisthenics coach for bodyweight + loop-band training.
 
-Primary navigation:
-- TODAY
-- PROGRESS
-- REPORTS
+## Current athlete focus
+- Push: 100 strict full-ROM push-ups, 50 strict full-ROM dips
+- Pull: 25–30 pull-ups, 5 OAP, 5+ full Front Lever Pull-ups, 8s Front Touch
+- Long-term Front Lever path: Front Touch → Wide Front Lever Touch → Straight Arm Touch (SAT)
+- Full Front Lever holds are intentionally not programmed when already consolidated.
 
-V8 fixes / hardening:
-- robust timers based on real timestamps
-- wake lock while training where supported
-- rest timer skip + completion handling
-- EMOM auto minute flow with timestamp-based timer
-- static skill timer based on timestamps
-- explicit modified flow
-- saved session notes
-- weekly report history
-- session detail history
-- JSON export/import backup
-- explicit haptic toggle
-- coach range vs today target
-- per-set previous comparison
-- right/left skill tracking
-- handstand checklist
-- skip/incomplete/modified distinction
-- localStorage v8 schema
+## V19 coaching rules
+- Progression standards are single-source and coach-reviewed.
+- Skill metrics use the best set/hold for rep/skill movements; EMOM uses total + drop-off.
+- Zero reps are valid performance data and are preserved.
+- Push volume starts conservatively and is built through quality, density and long-set exposure.
+- Baseline numbers are structured in the athlete profile.
 
-Data is local to the same browser/device until cloud sync is intentionally added.
-
-## V8 hardening
-- Session history retained in Reports.
-- Historical session detail + editable session note.
-- Export/import full JSON backup.
-- Set/minute inline editing without browser prompts.
-- Real timestamp-based rest, EMOM and static skill timers.
-- No new primary navigation beyond Today / Progress / Reports.
-
-## Progression engine
-Each exercise can expose a current variant, next variant, coach promotion rule, and band role. The UI shows the progression inside the workout player and again at workout completion. A qualifying result is first marked `1/2 QUALIFYING SESSIONS`; two consecutive qualifying sessions become `READY FOR COACH REVIEW`. The app never changes the programmed exercise automatically.
-
-## Sunday
-Sunday is the athletic lower-body day: dynamic warm-up, broad jump + countermovement jump, Bulgarian split squat, pistol progression, single-leg RDL, split jump, calf raise and band leg curl.
-
-## V10 production flow
-- PROMOTE changes the current variant for future sessions and persists locally.
-- KEEP CURRENT records a coach hold decision.
-- Current variant is shown in Today and the workout player.
-- Unfinished sessions are auto-saved as drafts.
-- The player can be exited, resumed, saved as a draft, or discarded.
-- Progression remains coach-controlled: qualification never changes the program automatically.
+## Stack
+React + TypeScript + Vite + Tailwind + Supabase.

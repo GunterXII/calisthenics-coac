@@ -31,7 +31,7 @@ export const PROGRESSIONS:Record<string,{current:string;next:string;rule:string;
  "oap-band":{current:"Assisted One Arm Pull-up",next:"Lighter Band OAP",rule:"3×5/arm with current band and RIR ≥1",regression:"Heavier Band OAP",bandMode:"assistance"},
  "touch":{current:"Front Touch",next:"Wide Front Lever Touch",rule:"8 sec clean free hold for 2 consecutive exposures, with body line and touch position maintained",regression:"Assisted Front Touch",bandMode:"none"},
  "touch-band":{current:"Assisted Front Touch",next:"Lighter Band Front Touch",rule:"3×8 sec clean holds with current band and consistent touch position",regression:"Heavier Band Front Touch",bandMode:"assistance"},
- "flpu":{current:"Full Front Lever Pull-up",next:"5+ Rep Full FL Pull-up",rule:"5×5 strict full-position reps with no form loss across 2 exposures",regression:"Band-Assisted FL Pull-up",bandMode:"none"},
+ "flpu":{current:"Full Front Lever Pull-up",next:"5+ Rep Full FL Pull-up",rule:"5×4 strict full-position reps with no form loss across 2 consecutive exposures",regression:"Band-Assisted FL Pull-up",bandMode:"none"},
  "wide-touch":{current:"Wide Front Lever Touch",next:"Straight Arm Touch (SAT)",rule:"3×5 sec clean wide-touch holds with progressively wider grip and no shape loss",regression:"Front Touch",bandMode:"none"},
  "sat":{current:"Straight Arm Touch (SAT)",next:"Longer / Cleaner SAT",rule:"3×3 sec strict straight-arm holds with locked elbows and clean line",regression:"Wide Front Lever Touch",bandMode:"none"},
  "flpu-band":{current:"Band-Assisted FL Pull-up",next:"Lighter Band FL Pull-up",rule:"3×6 clean reps with current band",regression:"Heavier Band FL Pull-up",bandMode:"assistance"},
@@ -131,8 +131,8 @@ export const PROGRESSION_LADDERS:Record<string,{id:string;name:string}[]>={
 export const PROGRAM:Record<DayKey,DayProgram>={
  Monday:{title:"PUSH A",subtitle:"Pike progression • Push-up volume • Dips volume",warmup:pushWarmup,blocks:[
   {id:"pike",kind:"PERFORMANCE",name:"Pike Push-up",detail:"3 × 6–10 • RIR 1–2 • progress foot elevation over time",sets:3,target:"6–10",rest:150,previousMode:"reps"},
-  {id:"pushup-volume",kind:"PERFORMANCE",name:"Push-up",detail:"4 × 18–28 • RIR 1–2 • standard grip",sets:4,target:"18–28",rest:120,previousMode:"reps"},
-  {id:"dips-volume-a",kind:"PERFORMANCE",name:"Dips",detail:"4 × 15–25 • RIR 1–2 • controlled depth",sets:4,target:"15–25",rest:120,previousMode:"reps"},
+  {id:"pushup-volume",kind:"PERFORMANCE",name:"Push-up",detail:"3 × 16–24 • RIR 2→1 • standard grip • full ROM",sets:3,target:"16–24",rest:120,previousMode:"reps"},
+  {id:"dips-volume-a",kind:"PERFORMANCE",name:"Dips",detail:"3 × 15–22 • RIR 2→1 • controlled full ROM",sets:3,target:"15–22",rest:120,previousMode:"reps"},
   {id:"lat-a",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–30 • choose band by RIR",sets:3,target:"15–30",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"},
   {id:"tri-a",kind:"ACCESSORY",name:"Band Triceps Pressdown",detail:"3 × 15–30 • controlled",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
   {id:"core-a",kind:"CORE",name:"Hollow Body Hold",detail:"3 × 20–40 sec",sets:3,target:"20–40 sec",rest:75,previousMode:"seconds"}
@@ -146,9 +146,9 @@ export const PROGRAM:Record<DayKey,DayProgram>={
  ]},
  Wednesday:{title:"PUSH B",subtitle:"Pike progression • Diamond grip • Push-up EMOM",warmup:pushWarmup,blocks:[
   {id:"pike",kind:"PERFORMANCE",name:"Pike Push-up",detail:"3 × 6–10 • RIR 1–2 • use the current progression rung",sets:3,target:"6–10",rest:150,previousMode:"reps"},
-  {id:"diamond",kind:"PERFORMANCE",name:"Diamond Push-up",detail:"3 × 12–20 • RIR 1–2 • harder push variation",sets:3,target:"12–20",rest:120,previousMode:"reps"},
-  {id:"pushup-emom-b",kind:"EMOM",name:"Push-up",detail:"10 min EMOM • 10–14 reps/min • accumulate quality volume",minutes:10,target:"10–14/min",rest:60,previousMode:"emom"},
-  {id:"dips-emom-b",kind:"EMOM",name:"Dips",detail:"8–10 min EMOM • 5–8 reps/min • stay submaximal",minutes:10,target:"5–8/min",rest:60,previousMode:"emom"},
+  {id:"diamond",kind:"PERFORMANCE",name:"Diamond Push-up",detail:"2 × 12–18 • RIR 2→1 • harder push variation",sets:2,target:"12–18",rest:120,previousMode:"reps"},
+  {id:"pushup-emom-b",kind:"EMOM",name:"Push-up",detail:"8 min EMOM • 8–12 reps/min • build density without failure",minutes:8,target:"8–12/min",rest:60,previousMode:"emom"},
+  {id:"dips-emom-b",kind:"EMOM",name:"Dips",detail:"8 min EMOM • 5–7 reps/min • stay submaximal",minutes:8,target:"5–7/min",rest:60,previousMode:"emom"},
   {id:"lat-b",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"},
   {id:"tri-b",kind:"ACCESSORY",name:"Band Overhead Triceps Extension",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"}
  ]},
@@ -161,11 +161,11 @@ export const PROGRAM:Record<DayKey,DayProgram>={
   {id:"leg-raise",kind:"CORE",name:"Hanging Leg Raise",detail:"3 × 8–15",sets:3,target:"8–15",rest:90,previousMode:"reps"}
  ]},
  Friday:{title:"PUSH C",subtitle:"Long-set practice • Close grip • Dips density",warmup:pushWarmup,blocks:[
-  {id:"pushup-long",kind:"PERFORMANCE",name:"Push-up Long Set",detail:"1 × 25–35 • stop around RIR 2 • build toward a 100-rep set",sets:1,target:"25–35",rest:180,previousMode:"reps"},
-  {id:"dips-long",kind:"PERFORMANCE",name:"Dips Long Set",detail:"1 × 25–35 • stop around RIR 2 • build toward a 50-rep set",sets:1,target:"25–35",rest:180,previousMode:"reps"},
-  {id:"close-pushup",kind:"PERFORMANCE",name:"Close-Grip Push-up",detail:"3 × 12–20 • RIR 1–2 • triceps emphasis",sets:3,target:"12–20",rest:120,previousMode:"reps"},
-  {id:"pushup-emom-c",kind:"EMOM",name:"Push-up",detail:"8–12 min EMOM • 8–12 reps/min • accumulate clean volume",minutes:10,target:"8–12/min",rest:60,previousMode:"emom"},
-  {id:"dips-emom-c",kind:"EMOM",name:"Dips",detail:"8–12 min EMOM • 5–7 reps/min • accumulate clean volume",minutes:10,target:"5–7/min",rest:60,previousMode:"emom"},
+  {id:"pushup-long",kind:"PERFORMANCE",name:"Push-up Long Set",detail:"1 × 24–32 • stop around RIR 2 • full ROM • build toward 100",sets:1,target:"24–32",rest:180,previousMode:"reps"},
+  {id:"dips-long",kind:"PERFORMANCE",name:"Dips Long Set",detail:"1 × 24–32 • stop around RIR 2 • full ROM • build toward 50",sets:1,target:"24–32",rest:180,previousMode:"reps"},
+  {id:"close-pushup",kind:"PERFORMANCE",name:"Close-Grip Push-up",detail:"2 × 12–18 • RIR 2→1 • triceps emphasis",sets:2,target:"12–18",rest:120,previousMode:"reps"},
+  {id:"pushup-emom-c",kind:"EMOM",name:"Push-up",detail:"8 min EMOM • 8–10 reps/min • accumulate clean volume",minutes:8,target:"8–10/min",rest:60,previousMode:"emom"},
+  {id:"dips-emom-c",kind:"EMOM",name:"Dips",detail:"8 min EMOM • 5–6 reps/min • accumulate clean volume",minutes:8,target:"5–6/min",rest:60,previousMode:"emom"},
   {id:"lat-c",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"}
  ]},
  Saturday:{title:"PULL C",subtitle:"FL Pull-up • Front Lever touch pathway • Pull-up density",warmup:pullWarmup,blocks:[

@@ -579,11 +579,35 @@ const LOCAL_PROFILE_KEY="cc-athlete-coaching-profile";
 function getLocalAthleteProfile():AthleteCoachingProfile|null{try{const x=JSON.parse(localStorage.getItem(LOCAL_PROFILE_KEY)||"null");return x&&typeof x==='object'?x:null}catch{return null}}
 function saveLocalAthleteProfile(profile:AthleteCoachingProfile){localStorage.setItem(LOCAL_PROFILE_KEY,JSON.stringify({...profile,updated_at:new Date().toISOString()}));}
 
+function pushVolumeGuard(){
+ const pushLogs=getSessions().filter(s=>s.day==="Monday"||s.day==="Wednesday"||s.day==="Friday").slice().sort((a,b)=>b.date-a.date).slice(0,3);
+ if(pushLogs.length<2)return {status:"STARTING",detail:"Build a 2–3 session baseline before changing Push volume automatically."};
+ const completed=pushLogs.flatMap(s=>s.logs||[]).filter(l=>l.status==="complete"&&(/Push-up|Dips/.test(l.exerciseName)));
+ const fatigue=pushLogs.map(s=>Number(s.readiness?.energy||0)).filter(x=>x>0);
+ const pain=pushLogs.reduce((m,s)=>Math.max(m,Number(s.readiness?.wristPain||0),Number(s.readiness?.elbowPain||0)),0);
+ const incomplete=pushLogs.reduce((n,s)=>n+(s.logs||[]).filter(l=>l.status==="incomplete").length,0);
+ if(pain>=4||incomplete>=2||fatigue.some(x=>x<=2))return {status:"HOLD / REDUCE",detail:"Recent readiness, pain or incomplete-set signals are high. Hold volume rather than adding reps."};
+ if(completed.length>=4){
+   const totals=pushLogs.map(s=>(s.logs||[]).filter(l=>l.status==="complete"&&(/Push-up|Dips/.test(l.exerciseName))).reduce((n,l)=>n+(l.result.reps||[]).reduce((a,b)=>a+b,0),0));
+   const rising=totals.length>=2 && totals[0]>=totals[totals.length-1];
+   return rising?{status:"BUILD GRADUALLY",detail:"Recent Push volume is stable/rising with acceptable readiness. Add reps or density in small steps only."}:{status:"HOLD",detail:"Recent Push volume is not clearly rising. Repeat the current prescription before adding work."};
+ }
+ return {status:"HOLD",detail:"Keep the current prescription until enough clean Push exposures are logged."};
+}
+
 function AthleteGoalCard(){
+ const baselineDefaults={pushups:40,dips:45,pullups:25,oap:2,flPullups:4,frontTouchSec:5};
  const [profile,setProfile]=useState<AthleteCoachingProfile|null>(()=>getLocalAthleteProfile());
- useEffect(()=>{if(supabaseConfigured){fetchMyCoachingProfile().then(p=>{if(p){setProfile(p);saveLocalAthleteProfile(p)}}).catch(()=>{})}},[]);
+ useEffect(()=>{if(supabaseConfigured){fetchMyCoachingProfile().then(p=>{if(p){const merged={...p,baseline:{...baselineDefaults,...(p.baseline||{})}};setProfile(merged);saveLocalAthleteProfile(merged)}}).catch(()=>{})}},[]);
  if(!profile)return null;
- return <div className="mt-4 rounded-2xl border border-violet-500/15 bg-violet-500/5 p-4"><div className="section-kicker">CURRENT COACH FOCUS</div><div className="mt-2 text-sm font-extrabold">{profile.primaryGoal||"Performance development"}</div><div className="mt-2 flex flex-wrap gap-2 text-[8px] font-bold tracking-[.1em] text-violet2">{(profile.prioritySkills||[]).slice(0,4).map(x=><span key={x} className="chip">{x}</span>)}</div></div>
+ return <div className="mt-4 rounded-2xl border border-violet-500/15 bg-violet-500/5 p-4">
+   <div className="flex items-end justify-between gap-3"><div><div className="section-kicker">CURRENT COACH FOCUS</div><div className="mt-2 text-sm font-extrabold">{profile.primaryGoal||"Performance development"}</div></div><span className="tag">V19</span></div>
+   <div className="mt-2 flex flex-wrap gap-2 text-[8px] font-bold tracking-[.1em] text-violet2">{(profile.prioritySkills||[]).slice(0,4).map(x=><span key={x} className="chip">{x}</span>)}</div>
+   <div className="mt-3 grid grid-cols-3 gap-2">
+     {[["100 PU",profile.baseline?.pushups],["50 DIPS",profile.baseline?.dips],["25–30 PULL",profile.baseline?.pullups],["5 OAP",profile.baseline?.oap],["5+ FLPU",profile.baseline?.flPullups],["8s TOUCH",profile.baseline?.frontTouchSec]].map(([label,value])=><div key={String(label)} className="rounded-xl border border-line bg-panel2 p-2"><div className="field-label">{label}</div><div className="mt-1 text-sm font-extrabold">{value??"—"}</div></div>)}
+   </div>
+   <div className="mt-3 rounded-xl bg-panel2 p-3 text-[9px] leading-4 text-zinc-500"><span className="font-bold text-zinc-300">LONG-TERM PULL PATH · </span>Front Touch → Wide Front Lever Touch → Straight Arm Touch (SAT)</div>
+ </div>
 }
 function RecoveryTrend(){const ss=getSessions().slice(-7);const rows=ss.map(s=>({date:new Date(s.date).toLocaleDateString(),sleep:s.readiness.sleepHours,energy:s.readiness.energy,pain:Math.max(s.readiness.wristPain||0,s.readiness.elbowPain||0)}));return <div className="mt-8 rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">RECOVERY — LAST 7</div><div className="mt-3 grid gap-2">{rows.slice().reverse().map(r=><div key={r.date} className="history-row"><span>{r.date}</span><strong>{r.sleep?`${r.sleep.toFixed(1)}h sleep`:'—'}</strong><span>Energy {r.energy??'—'}/5 · Pain {r.pain}/5</span></div>)}{!rows.length&&<p className="text-xs text-zinc-600">No recovery history yet.</p>}</div></div>}
 
@@ -615,6 +639,7 @@ function Today({day,setDay,start,draft,onResume}:{day:DayKey;setDay:(x:DayKey)=>
    {p.blocks.map((b,i)=><div key={b.id} className="session-row"><div className="session-index">{String(i+1).padStart(2,"0")}</div><div><span className="tag">{LABEL[b.kind]}</span><strong>{currentVariantFor(b.id,b.name)}</strong><p>{b.detail}</p><ProgressionHint block={b}/></div></div>)}
   </div>
   <AthleteGoalCard />
+  {push&&<div className="mt-3 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between gap-3"><div><div className="section-kicker">PUSH VOLUME GUARD</div><div className="mt-1 text-[10px] text-zinc-400">Coach recommendation from recent Push sessions.</div></div><span className="tag">{pushVolumeGuard().status}</span></div><div className="mt-2 text-[9px] leading-4 text-zinc-600">{pushVolumeGuard().detail}</div></div>}
   <div className="mt-4 grid gap-2 md:grid-cols-2">
     {last?<div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4"><div className="section-kicker">LAST SESSION</div><div className="mt-2 flex flex-wrap gap-3 text-[10px] text-zinc-400"><span>{Math.round(last.durationSec/60)} min</span><span>{last.totalReps} reps</span><span>{last.emomReps} EMOM</span></div></div>:<div className="rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">FIRST SESSION</div><p className="mt-2 text-[10px] leading-5 text-zinc-500">Your performance history will appear here after the first completed session.</p></div>}
     <div className="rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">TODAY'S FOCUS</div><p className="mt-2 text-[10px] leading-5 text-zinc-500">Follow the prescribed variant first. Progression candidates are reviewed from logged performance after the session.</p>{draft&&<div className="mt-2 text-[8px] font-bold tracking-[.12em] text-violet2">UNFINISHED SESSION AVAILABLE · RESUME WHERE YOU LEFT OFF</div>}</div>
@@ -631,7 +656,11 @@ function TrendRow({name,values,unit}:{name:string;values:number[];unit:string}){
  return <div className="rounded-2xl border border-line bg-panel p-4"><div className="flex items-end justify-between gap-3"><div><span className="field-label">{name}</span><div className="mt-1 text-sm font-extrabold">{v.length?v[v.length-1].toFixed(unit==="s"?1:0):"—"}<span className="ml-1 text-[9px] text-zinc-600">{unit}</span></div></div><span className="text-[9px] text-zinc-600">LAST {v.length}/6</span></div>{v.length>1&&<div className="mt-4 flex h-10 items-end gap-1">{v.map((x,i)=><div key={i} className="flex-1 rounded-sm bg-violet-500/30" style={{height:`${Math.max(10,Math.round((x/max)*100))}%`}}/> )}</div>}{v.length>1&&<div className="mt-2 text-[8px] text-zinc-600">{v[0].toFixed(unit==="s"?1:0)} → {v[v.length-1].toFixed(unit==="s"?1:0)} {unit}</div>}</div>
 }
 function trendValues(id:string,kind:"static"|"reps"|"emom"){
- return getSessions().flatMap(s=>s.logs.filter(l=>l.exerciseId===id&&!l.skipped).map(l=>kind==="static"?Math.max(...(l.result.seconds||[0])):kind==="reps"?(l.result.reps||[]).reduce((a,b)=>a+b,0):(l.result.emom||[]).reduce((a,b)=>a+b,0))).filter(x=>x>0);
+ return getSessions().flatMap(s=>s.logs.filter(l=>l.exerciseId===id&&!l.skipped).map(l=>
+   kind==="static"?Math.max(...(l.result.seconds||[0])):
+   kind==="reps"?Math.max(...(l.result.reps||[0])):
+   (l.result.emom||[]).reduce((a,b)=>a+b,0)
+ )).filter(x=>x>0);
 }
 function Progress({refresh}:{refresh:number}){
  const ss=getSessions(),logs=getLogs(),weights=ss.map(s=>s.readiness?.weightKg).filter((x):x is number=>typeof x==="number");
@@ -640,7 +669,7 @@ function Progress({refresh}:{refresh:number}){
  const prs=buildPrVault();
  const milestones=buildMilestones();
  return <div>
-  <div className="eyebrow">PROGRESS</div><h1>Performance</h1><p className="sub">Your current level, your bests, and the next useful milestone.</p>
+  <div className="eyebrow">PROGRESS</div><h1>Performance</h1><p className="sub">Best set, trend, target and next useful action — not just total volume.</p>
   <div className="mt-6 grid grid-cols-3 gap-2"><Metric label="SESSIONS" value={ss.length}/><Metric label="BLOCKS" value={logs.length}/><Metric label="EMOM" value={logs.filter(x=>x.kind==="EMOM").length}/></div>
   <div className="mt-4 grid gap-2 md:grid-cols-4"><SmallMetric label="WEIGHT NOW" value={weights.length?`${weights[weights.length-1]!.toFixed(1)} kg`:"—"}/><SmallMetric label="FRONT TOUCH" value={bestStatic("touch")}/><SmallMetric label="FL PULL-UP" value={bestReps("flpu")}/><SmallMetric label="OAP" value={bestReps("oap")}/></div>
   <div className="mt-8"><div className="section-kicker">KEY TRENDS</div><div className="mt-3 grid gap-2 md:grid-cols-2"><TrendRow name="FRONT TOUCH" values={touch} unit="s"/><TrendRow name="FL PULL-UP" values={fl} unit="reps"/><TrendRow name="OAP" values={oap} unit="reps"/><TrendRow name="PUSH-UP BEST SET" values={pushBest} unit="reps"/><TrendRow name="DIPS BEST SET" values={dipBest} unit="reps"/></div></div>
@@ -659,7 +688,9 @@ function Progress({refresh}:{refresh:number}){
 function buildPrVault(){
  const logs=getLogs().filter(l=>l.status!=="skipped"),out:any[]=[];
  const push=(id:string,category:string,kind:"static"|"reps"|"emom")=>{const rows=logs.filter(l=>l.exerciseId===id);let best:number|undefined,date=0,context="";rows.forEach(l=>{const vals=kind==="static"?(l.result.seconds||[]):kind==="reps"?(l.result.reps||[]):(l.result.emom||[]);const v=kind==="static"?Math.max(...vals,0):kind==="emom"?vals.reduce((a,b)=>a+b,0):Math.max(...vals,0);if(v>(best??-1)){best=v;date=l.date;context=kind==="emom"?`${vals.length} minutes`:`${vals.length} sets`}});if(best!==undefined&&best>0)out.push({id,category,name:exerciseNameFor(id),value:`${best}${kind==="static"?"s":" reps"}`,date,context});};
- push("touch","SKILL","static"); push("flpu","SKILL","reps"); push("oap","SKILL","reps"); push("dips","WORK CAPACITY","emom"); push("pullup","WORK CAPACITY","emom"); push("close-chin","WORK CAPACITY","emom");
+ push("touch","SKILL","static"); push("flpu","SKILL","reps"); push("oap","SKILL","reps"); push("pushup-volume","WORK CAPACITY","reps"); push("pushup-long","WORK CAPACITY","reps");
+ push("dips-volume-a","WORK CAPACITY","reps"); push("dips-long","WORK CAPACITY","reps");
+ push("pullup","WORK CAPACITY","reps");
  return out;
 }
 function buildMilestones(){
@@ -715,7 +746,7 @@ function Reports({refresh}:{refresh:number}){
   <div className="eyebrow">PROGRESS</div><h1>Reports</h1>
   <PushGoalDashboard/>
   <div className="mt-5 grid grid-cols-3 gap-2"><Metric label="WORKOUTS" value={weekSessions.length}/><Metric label="REPS" value={weekReps}/><Metric label="EMOM" value={weekEmom}/></div>
-  <div className="mt-2 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between"><div><div className="field-label">BEST STATIC</div><div className="mt-1 text-xl font-extrabold">{best?`${best.toFixed(1)}s`:"—"}</div></div><div className="text-right"><div className="field-label">CURRENT WEEK</div><div className="mt-1 text-sm font-bold">{weekSessions.length} sessions</div></div></div></div>
+  <div className="mt-2 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between"><div><div className="field-label">BEST SKILL</div><div className="mt-1 text-xl font-extrabold">{best?`${best.toFixed(1)}s`:"—"}</div></div><div className="text-right"><div className="field-label">CURRENT WEEK</div><div className="mt-1 text-sm font-bold">{weekSessions.length} sessions</div></div></div></div>
   <div className="mt-6"><div className="section-kicker">RECENT SESSIONS</div>{sessions.slice(0,12).map(s=><button key={s.id} onClick={()=>setSelected(s.id)} className={`history-card ${selected===s.id?"selected":""}`}><div><b>{s.day}</b><span>{new Date(s.date).toLocaleDateString()}</span></div><span>{Math.round(s.durationSec/60)} min · {s.totalReps} reps</span></button>)}{!sessions.length&&<p className="mt-3 text-xs text-zinc-600">No completed sessions yet.</p>}</div>
   <div className="mt-6 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between gap-3"><div><div className="section-kicker">COACH EXPORT</div><div className="mt-1 text-[9px] text-zinc-600">Weekly report for your coach.</div></div><button className="secondary-cta !py-2" onClick={()=>setShowWeekly(v=>!v)}>{showWeekly?"HIDE":"VIEW"}</button></div>{showWeekly&&<><div className="mt-4 flex gap-2 overflow-x-auto pb-1">{[0,1,2,3,4].map(n=><button key={n} onClick={()=>setOffset(n)} className={`rounded-lg border px-3 py-2 text-[9px] font-bold whitespace-nowrap ${offset===n?"border-violet-500/40 bg-violet-500/10 text-violet2":"border-line bg-panel2 text-zinc-600"}`}>{n===0?"THIS WEEK":`WEEK -${n}`}</button>)}</div><pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-panel2 p-3 font-sans text-[9px] leading-5 text-zinc-400">{report}</pre><div className="mt-3 grid grid-cols-2 gap-2"><button className="primary-cta" onClick={copy}>{copied?"COPIED":"COPY"}</button><button className="secondary-cta" onClick={()=>download(report,`weekly-coach-report-${offset}.txt`)}><Download size={14}/>EXPORT</button></div></>}</div>
   {selected&&<SessionDetail session={sessions.find(s=>s.id===selected)!} onClose={()=>setSelected(null)}/>}<CoachLinkCard onLinked={()=>{}}/><AthleteProfileEditor/><DataBackup/>
@@ -728,10 +759,21 @@ function SessionDetail({session,onClose}:{session:SessionSummary;onClose:()=>voi
 }
 
 function AthleteProfileEditor(){
- const defaults:AthleteCoachingProfile={athlete_id:"local",primaryGoal:"",secondaryGoals:[],prioritySkills:[],targetDate:"",notes:"",schedule_days:6,equipment:["Pull-up bar","Dip bars","Loop bands","Parallettes"],preferences:{}};
+ const defaults:AthleteCoachingProfile={
+  athlete_id:"local",
+  primaryGoal:"100 push-ups + 50 dips while building OAP / Front Touch",
+  secondaryGoals:["25–30 pull-ups"],
+  prioritySkills:["OAP","Front Touch","FL Pull-up"],
+  targetDate:"",
+  notes:"Campetto only. Bodyweight + loop bands. Full Front Lever is already consolidated and is not a programmed exercise.",
+  baseline:{pushups:40,dips:45,pullups:25,oap:2,flPullups:4,frontTouchSec:5},
+  schedule_days:6,
+  equipment:["Pull-up bar","Dip bars","Loop bands","Parallettes"],
+  preferences:{}
+};
  const [profile,setProfile]=useState<AthleteCoachingProfile>(()=>getLocalAthleteProfile()||defaults);
  const [busy,setBusy]=useState(false),[msg,setMsg]=useState(""),[editing,setEditing]=useState(false);
- useEffect(()=>{if(supabaseConfigured)fetchMyCoachingProfile().then(p=>{if(p){setProfile(p);saveLocalAthleteProfile(p)}}).catch(()=>{})},[]);
+ useEffect(()=>{if(supabaseConfigured)fetchMyCoachingProfile().then(p=>{if(p){const merged={...defaults,...p,baseline:{...defaults.baseline,...(p.baseline||{})}};setProfile(merged);saveLocalAthleteProfile(merged)}}).catch(()=>{})},[]);
  const save=async()=>{setBusy(true);setMsg("");try{const payload={...profile,secondaryGoals:profile.secondaryGoals||[],prioritySkills:profile.prioritySkills||[],equipment:profile.equipment||[]};if(supabaseConfigured){const saved=await saveMyCoachingProfile(payload);setProfile(saved);saveLocalAthleteProfile(saved)}else saveLocalAthleteProfile(payload);setEditing(false);setMsg("PROFILE SAVED");}catch(e:any){setMsg(e?.message||"PROFILE SAVE FAILED")}finally{setBusy(false)}};
  const sessions=getSessions().slice().sort((a,b)=>b.date-a.date);
  const latest=sessions[0];
@@ -760,6 +802,15 @@ function AthleteProfileEditor(){
    <div className="rounded-xl border border-line bg-panel2 p-3"><span className="field-label">PERFORMANCE SNAPSHOT</span><div className="mt-1 text-sm font-extrabold">{bestStatic!==undefined?`Best hold ${bestStatic.toFixed(1)}s`:`Best reps ${bestRepSet??"—"}`}</div><div className="mt-1 text-[8px] text-zinc-600">Across logged sessions</div></div>
   </div>
 
+  <div className="mt-3 rounded-xl border border-violet-500/15 bg-violet-500/5 p-3">
+   <div className="field-label">BASELINE — COACHING NUMBERS</div>
+   <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+    {[["PUSH-UPS",profile.baseline?.pushups,"reps"],["DIPS",profile.baseline?.dips,"reps"],["PULL-UPS",profile.baseline?.pullups,"reps"],["OAP",profile.baseline?.oap,"reps"],["FL PULL-UP",profile.baseline?.flPullups,"reps"],["FRONT TOUCH",profile.baseline?.frontTouchSec,"sec"]].map(([label,value,unit])=>
+      <div key={String(label)} className="rounded-xl border border-line bg-panel2 p-2"><div className="field-label">{label}</div><div className="mt-1 text-lg font-extrabold">{value??"—"}<span className="ml-1 text-[8px] text-zinc-600">{unit}</span></div></div>
+    )}
+   </div>
+  </div>
+
   <div className="mt-3 grid gap-2 sm:grid-cols-2">
    <div className="rounded-xl border border-line bg-panel2 p-3"><span className="field-label">TRAINING SETUP</span><div className="mt-2 flex flex-wrap gap-2">{(profile.equipment||[]).map(x=><span key={x} className="chip">{x}</span>)}{!(profile.equipment||[]).length&&<span className="text-[9px] text-zinc-600">No equipment set</span>}</div></div>
    <div className="rounded-xl border border-line bg-panel2 p-3"><span className="field-label">LAST COACH SIGNAL</span><div className="mt-1 text-[10px] font-bold">{lastDecision?.title||"No coaching decision recorded yet"}</div><div className="mt-1 text-[8px] leading-4 text-zinc-600">{lastDecision?.detail||"Complete a few sessions and the coach loop will have more context."}</div></div>
@@ -772,6 +823,14 @@ function AthleteProfileEditor(){
    <label><span className="field-label">TARGET DATE</span><input type="date" value={profile.targetDate||""} onChange={e=>setProfile({...profile,targetDate:e.target.value})}/></label>
    <label><span className="field-label">PRIORITY SKILLS</span><input value={(profile.prioritySkills||[]).join(", ")} onChange={e=>setProfile({...profile,prioritySkills:e.target.value.split(",").map(x=>x.trim()).filter(Boolean)})} placeholder="OAP, Front Lever, Planche"/></label>
    <label><span className="field-label">SECONDARY GOALS</span><input value={(profile.secondaryGoals||[]).join(", ")} onChange={e=>setProfile({...profile,secondaryGoals:e.target.value.split(",").map(x=>x.trim()).filter(Boolean)})} placeholder="Strength, endurance"/></label>
+   <div className="md:col-span-2 rounded-xl border border-line bg-panel2 p-3">
+    <div className="field-label">BASELINE</div>
+    <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {([
+        ["pushups","PUSH-UPS"],["dips","DIPS"],["pullups","PULL-UPS"],["oap","OAP"],["flPullups","FL PULL-UP"],["frontTouchSec","FRONT TOUCH SEC"]
+      ] as const).map(([key,label])=><label key={key}><span className="field-label">{label}</span><input inputMode="decimal" value={String(profile.baseline?.[key]??"")} onChange={e=>setProfile({...profile,baseline:{...(profile.baseline||{}),[key]:Math.max(0,Number(e.target.value)||0)}})} /></label>)}
+    </div>
+   </div>
    <label><span className="field-label">TRAINING DAYS</span><input inputMode="numeric" value={String(profile.schedule_days??6)} onChange={e=>setProfile({...profile,schedule_days:Math.max(1,Math.min(7,Number(e.target.value)||0))})}/></label>
    <label><span className="field-label">EQUIPMENT</span><input value={(profile.equipment||[]).join(", ")} onChange={e=>setProfile({...profile,equipment:e.target.value.split(",").map(x=>x.trim()).filter(Boolean)})} placeholder="Pull-up bar, Dip bars, Loop bands"/></label>
    <label className="md:col-span-2"><span className="field-label">COACH CONTEXT</span><textarea value={profile.notes||""} onChange={e=>setProfile({...profile,notes:e.target.value})} className="min-h-20 w-full" placeholder="Important constraints, preferences, recurring limitations, anything your coach should remember..."/></label>

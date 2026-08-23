@@ -40,12 +40,22 @@ export interface WorkoutLog {
     band?:Band; rir?:number; fatigue?:number; note?:string;
   };
 }
+export interface AthleteBaseline {
+  pushups?: number;
+  dips?: number;
+  pullups?: number;
+  oap?: number;
+  flPullups?: number;
+  frontTouchSec?: number;
+}
+
 export interface AthleteGoals {
   primaryGoal?: string;
   secondaryGoals?: string[];
   prioritySkills?: string[];
   targetDate?: string;
   notes?: string;
+  baseline?: AthleteBaseline;
 }
 
 export interface SessionSummary {
