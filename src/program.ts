@@ -27,7 +27,7 @@ export const PROGRESSIONS:Record<string,{current:string;next:string;rule:string;
  "close-chin":{current:"Close-Grip Chin-up",next:"Chest-to-Bar Chin-up",rule:"10-min EMOM reaches 10/min with stable ROM",regression:"Close-Grip Chin-up",bandMode:"none"},
  "close-pull":{current:"Close-Grip Pull-up",next:"Chest-to-Bar Close Pull-up",rule:"10-min EMOM reaches 9/min with <15% drop-off",regression:"Close-Grip Pull-up",bandMode:"none"},
  "archer-pull":{current:"Archer Pull-up",next:"Reduced-Assistance Archer / OAP Transition",rule:"3×8/side clean and symmetric",regression:"Assisted Archer Pull-up",bandMode:"assistance"},
- "oap":{current:"One Arm Pull-up",next:"Strict BW OAP / Higher Consistency",rule:"6 quality attempts with ≥2 successful reps per arm",regression:"Assisted OAP",bandMode:"none"},
+ "oap":{current:"One Arm Pull-up",next:"Strict BW OAP / Higher Consistency",rule:"Complete 6 quality sets; prioritize clean singles and add doubles only when repeatable",regression:"Assisted OAP",bandMode:"none"},
  "oap-band":{current:"Assisted One Arm Pull-up",next:"Lighter Band OAP",rule:"3×5/arm with current band and RIR ≥1",regression:"Heavier Band OAP",bandMode:"assistance"},
  "touch":{current:"Front Touch",next:"Wide Front Lever Touch",rule:"8 sec clean free hold for 2 consecutive exposures, with body line and touch position maintained",regression:"Assisted Front Touch",bandMode:"none"},
  "touch-band":{current:"Assisted Front Touch",next:"Lighter Band Front Touch",rule:"3×8 sec clean holds with current band and consistent touch position",regression:"Heavier Band Front Touch",bandMode:"assistance"},
@@ -153,7 +153,7 @@ export const PROGRAM:Record<DayKey,DayProgram>={
   {id:"tri-b",kind:"ACCESSORY",name:"Band Overhead Triceps Extension",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"}
  ]},
  Thursday:{title:"PULL B",subtitle:"OAP • Assisted volume • Chin endurance",warmup:pullWarmup,blocks:[
-  {id:"oap",kind:"SKILL_REPS",name:"One Arm Pull-up",detail:"6 quality attempts • mostly singles until clean doubles are repeatable",sets:6,target:"1–2 / arm",rest:240,previousMode:"reps"},
+  {id:"oap",kind:"SKILL_REPS",name:"One Arm Pull-up",detail:"6 quality sets • 1–2 reps / arm • prioritize clean singles",sets:6,target:"1–2 / arm",rest:240,previousMode:"reps"},
   {id:"oap-band",kind:"VOLUME_SKILL",name:"Assisted One Arm Pull-up",detail:"3 × 3–6 / arm • use the lightest band that keeps the OAP pattern",sets:3,target:"3–6 / arm",rest:180,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
   {id:"archer-pull",kind:"PERFORMANCE",name:"Archer Pull-up",detail:"3 × 5–8 / side • controlled transfer to the working arm",sets:3,target:"5–8 / side",rest:165,previousMode:"reps"},
   {id:"close-chin",kind:"EMOM",name:"Close-Grip Chin-up",detail:"10 min EMOM • 7–10 reps/min • leave room for quality",minutes:10,target:"7–10/min",rest:60,previousMode:"emom"},
