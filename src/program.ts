@@ -29,9 +29,11 @@ export const PROGRESSIONS:Record<string,{current:string;next:string;rule:string;
  "archer-pull":{current:"Archer Pull-up",next:"Reduced-Assistance Archer / OAP Transition",rule:"3×8/side clean and symmetric",regression:"Assisted Archer Pull-up",bandMode:"assistance"},
  "oap":{current:"One Arm Pull-up",next:"Strict BW OAP / Higher Consistency",rule:"6 quality attempts with ≥2 successful reps per arm",regression:"Assisted OAP",bandMode:"none"},
  "oap-band":{current:"Assisted One Arm Pull-up",next:"Lighter Band OAP",rule:"3×5/arm with current band and RIR ≥1",regression:"Heavier Band OAP",bandMode:"assistance"},
- "touch":{current:"Front Touch",next:"Longer Free Front Touch",rule:"Best hold improves and 4/5 free attempts are within 90% of best",regression:"Assisted Front Touch",bandMode:"none"},
- "touch-band":{current:"Assisted Front Touch",next:"Lighter Band Front Touch",rule:"3×8 sec clean holds with current band",regression:"Heavier Band Front Touch",bandMode:"assistance"},
- "flpu":{current:"Full Front Lever Pull-up",next:"Cleaner / Higher Full FL Pull-up",rule:"5×4 strict full-position reps with no form loss",regression:"Band-Assisted FL Pull-up",bandMode:"none"},
+ "touch":{current:"Front Touch",next:"Wide Front Lever Touch",rule:"8 sec clean free hold for 2 consecutive exposures, with body line and touch position maintained",regression:"Assisted Front Touch",bandMode:"none"},
+ "touch-band":{current:"Assisted Front Touch",next:"Lighter Band Front Touch",rule:"3×8 sec clean holds with current band and consistent touch position",regression:"Heavier Band Front Touch",bandMode:"assistance"},
+ "flpu":{current:"Full Front Lever Pull-up",next:"5+ Rep Full FL Pull-up",rule:"5×5 strict full-position reps with no form loss across 2 exposures",regression:"Band-Assisted FL Pull-up",bandMode:"none"},
+ "wide-touch":{current:"Wide Front Lever Touch",next:"Straight Arm Touch (SAT)",rule:"3×5 sec clean wide-touch holds with progressively wider grip and no shape loss",regression:"Front Touch",bandMode:"none"},
+ "sat":{current:"Straight Arm Touch (SAT)",next:"Longer / Cleaner SAT",rule:"3×3 sec strict straight-arm holds with locked elbows and clean line",regression:"Wide Front Lever Touch",bandMode:"none"},
  "flpu-band":{current:"Band-Assisted FL Pull-up",next:"Lighter Band FL Pull-up",rule:"3×6 clean reps with current band",regression:"Heavier Band FL Pull-up",bandMode:"assistance"},
  "curl-a":{current:"Band Curl",next:"Heavier Band Curl",rule:"3×30 with RIR ≥1 and strict ROM",regression:"Lighter Band Curl",bandMode:"resistance"},
  "curl-b":{current:"Band Curl",next:"Heavier Band Curl",rule:"3×30 with RIR ≥1 and strict ROM",regression:"Lighter Band Curl",bandMode:"resistance"},
@@ -99,6 +101,11 @@ export const PROGRESSION_LADDERS:Record<string,{id:string;name:string}[]>={
     {id:"touch-band-blue",name:"Assisted Front Touch — Blue"},
     {id:"touch-band-none",name:"Free Front Touch"}
   ],
+  "front-lever-touch":[
+    {id:"front-lever-touch",name:"Front Touch"},
+    {id:"wide-front-lever-touch",name:"Wide Front Lever Touch"},
+    {id:"straight-arm-touch",name:"Straight Arm Touch (SAT)"}
+  ],
   flpu:[
     {id:"flpu",name:"Full Front Lever Pull-up"},
     {id:"flpu-clean",name:"Full FL Pull-up — Cleaner / Higher"},
@@ -130,13 +137,12 @@ export const PROGRAM:Record<DayKey,DayProgram>={
   {id:"tri-a",kind:"ACCESSORY",name:"Band Triceps Pressdown",detail:"3 × 15–30 • controlled",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
   {id:"core-a",kind:"CORE",name:"Hollow Body Hold",detail:"3 × 20–40 sec",sets:3,target:"20–40 sec",rest:75,previousMode:"seconds"}
  ]},
- Tuesday:{title:"PULL A",subtitle:"Front Touch • High Pull • Pull-up",warmup:pullWarmup,blocks:[
-  {id:"touch",kind:"SKILL_STATIC",name:"Front Touch",detail:"3 quality free attempts • 5-second countdown • 8–12 sec coach range",sets:3,target:"8–12 sec",rest:210,countdown:true,previousMode:"seconds"},
-  {id:"touch-band",kind:"VOLUME_SKILL",name:"Assisted Front Touch",detail:"3 × 5–8 sec • heavy loop after free work",sets:3,target:"5–8 sec",rest:150,bandOptions:["Purple 25–40 lb","Blue 15–25 lb"],defaultBand:"Purple 25–40 lb",countdown:true,previousMode:"seconds"},
-  {id:"high-pull",kind:"PERFORMANCE",name:"High Pull-up",detail:"4 × 3–5",sets:4,target:"3–5",rest:180,previousMode:"reps"},
-  {id:"pullup",kind:"EMOM",name:"Pull-up",detail:"10 min EMOM • 8–12 reps/min",minutes:10,target:"8–12/min",rest:60,previousMode:"emom"},
-  {id:"curl-a",kind:"ACCESSORY",name:"Band Curl",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
-  {id:"knee",kind:"CORE",name:"Hanging Knee Raise",detail:"3 × 10–15",sets:3,target:"10–15",rest:75,previousMode:"reps"}
+ Tuesday:{title:"PULL A",subtitle:"Front Touch progression • Full FL strength • Pull-up endurance",warmup:pullWarmup,blocks:[
+  {id:"touch",kind:"SKILL_STATIC",name:"Front Touch",detail:"4 × 2–4 sec • current free range based on 5-sec PB • stop before shape breaks",sets:4,target:"2–4 sec",rest:240,countdown:true,previousMode:"seconds"},
+  {id:"touch-band",kind:"VOLUME_SKILL",name:"Assisted Front Touch",detail:"3 × 6–10 sec • use the lightest band that preserves the same touch pattern",sets:3,target:"6–10 sec",rest:150,bandOptions:["Blue 15–25 lb","Purple 25–40 lb"],defaultBand:"Purple 25–40 lb",countdown:true,previousMode:"seconds"},
+  {id:"high-pull",kind:"PERFORMANCE",name:"High Pull-up",detail:"3 × 3–5 • explosive quality, full reset",sets:3,target:"3–5",rest:180,previousMode:"reps"},
+  {id:"pullup",kind:"EMOM",name:"Pull-up",detail:"10 min EMOM • 8–12 reps/min • stay submaximal",minutes:10,target:"8–12/min",rest:60,previousMode:"emom"},
+  {id:"curl-a",kind:"ACCESSORY",name:"Band Curl",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"}
  ]},
  Wednesday:{title:"PUSH B",subtitle:"Pike progression • Diamond grip • Push-up EMOM",warmup:pushWarmup,blocks:[
   {id:"pike",kind:"PERFORMANCE",name:"Pike Push-up",detail:"3 × 6–10 • RIR 1–2 • use the current progression rung",sets:3,target:"6–10",rest:150,previousMode:"reps"},
@@ -146,11 +152,11 @@ export const PROGRAM:Record<DayKey,DayProgram>={
   {id:"lat-b",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"},
   {id:"tri-b",kind:"ACCESSORY",name:"Band Overhead Triceps Extension",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"}
  ]},
- Thursday:{title:"PULL B",subtitle:"OAP • Archer • Close-grip Chin",warmup:pullWarmup,blocks:[
-  {id:"oap",kind:"SKILL_REPS",name:"One Arm Pull-up",detail:"6 quality attempts • alternate arms",sets:6,target:"1–2 / arm",rest:210,previousMode:"reps"},
-  {id:"oap-band",kind:"VOLUME_SKILL",name:"Assisted One Arm Pull-up",detail:"3 × 2–5 / arm",sets:3,target:"2–5 / arm",rest:180,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
-  {id:"archer-pull",kind:"PERFORMANCE",name:"Archer Pull-up",detail:"3 × 5–8 / side",sets:3,target:"5–8 / side",rest:165,previousMode:"reps"},
-  {id:"close-chin",kind:"EMOM",name:"Close-Grip Chin-up",detail:"10 min EMOM • 8–10 reps/min",minutes:10,target:"8–10/min",rest:60,previousMode:"emom"},
+ Thursday:{title:"PULL B",subtitle:"OAP • Assisted volume • Chin endurance",warmup:pullWarmup,blocks:[
+  {id:"oap",kind:"SKILL_REPS",name:"One Arm Pull-up",detail:"6 quality attempts • mostly singles until clean doubles are repeatable",sets:6,target:"1–2 / arm",rest:240,previousMode:"reps"},
+  {id:"oap-band",kind:"VOLUME_SKILL",name:"Assisted One Arm Pull-up",detail:"3 × 3–6 / arm • use the lightest band that keeps the OAP pattern",sets:3,target:"3–6 / arm",rest:180,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"archer-pull",kind:"PERFORMANCE",name:"Archer Pull-up",detail:"3 × 5–8 / side • controlled transfer to the working arm",sets:3,target:"5–8 / side",rest:165,previousMode:"reps"},
+  {id:"close-chin",kind:"EMOM",name:"Close-Grip Chin-up",detail:"10 min EMOM • 7–10 reps/min • leave room for quality",minutes:10,target:"7–10/min",rest:60,previousMode:"emom"},
   {id:"curl-b",kind:"ACCESSORY",name:"Band Curl",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
   {id:"leg-raise",kind:"CORE",name:"Hanging Leg Raise",detail:"3 × 8–15",sets:3,target:"8–15",rest:90,previousMode:"reps"}
  ]},
@@ -162,11 +168,11 @@ export const PROGRAM:Record<DayKey,DayProgram>={
   {id:"dips-emom-c",kind:"EMOM",name:"Dips",detail:"8–12 min EMOM • 5–7 reps/min • accumulate clean volume",minutes:10,target:"5–7/min",rest:60,previousMode:"emom"},
   {id:"lat-c",kind:"ACCESSORY",name:"Band Lateral Raise",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Blue 15–25 lb","Purple 25–40 lb","Yellow 40–80 lb"],defaultBand:"Blue 15–25 lb",previousMode:"reps"}
  ]},
- Saturday:{title:"PULL C",subtitle:"Full FL Pull-up • High Pull • Pull-up density",warmup:pullWarmup,blocks:[
-  {id:"flpu",kind:"SKILL_REPS",name:"Full Front Lever Pull-up",detail:"5 quality sets • 1–3 clean reps",sets:5,target:"1–3",rest:210,previousMode:"reps"},
-  {id:"flpu-band",kind:"VOLUME_SKILL",name:"Band-Assisted FL Pull-up",detail:"3 × 3–6",sets:3,target:"3–6",rest:180,bandOptions:["Blue 15–25 lb","Purple 25–40 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
-  {id:"chest-high",kind:"PERFORMANCE",name:"Chest-to-Bar / High Pull-up",detail:"3 × 5–8",sets:3,target:"5–8",rest:180,previousMode:"reps"},
-  {id:"close-pull",kind:"EMOM",name:"Close-Grip Pull-up",detail:"10 min EMOM • 7–9 reps/min",minutes:10,target:"7–9/min",rest:60,previousMode:"emom"},
+ Saturday:{title:"PULL C",subtitle:"FL Pull-up • Front Lever touch pathway • Pull-up density",warmup:pullWarmup,blocks:[
+  {id:"flpu",kind:"SKILL_REPS",name:"Full Front Lever Pull-up",detail:"5 quality sets • current range 2–4 reps • build toward 5+ without shape loss",sets:5,target:"2–4",rest:240,previousMode:"reps"},
+  {id:"flpu-band",kind:"VOLUME_SKILL",name:"Band-Assisted FL Pull-up",detail:"3 × 3–6 • add volume without degrading the full-position pattern",sets:3,target:"3–6",rest:180,bandOptions:["Blue 15–25 lb","Purple 25–40 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
+  {id:"chest-high",kind:"PERFORMANCE",name:"Chest-to-Bar / High Pull-up",detail:"3 × 5–8 • explosive but controlled",sets:3,target:"5–8",rest:180,previousMode:"reps"},
+  {id:"close-pull",kind:"EMOM",name:"Close-Grip Pull-up",detail:"10 min EMOM • 7–10 reps/min • build pull endurance without maxing out",minutes:10,target:"7–10/min",rest:60,previousMode:"emom"},
   {id:"curl-c",kind:"ACCESSORY",name:"Band Curl",detail:"3 × 15–30",sets:3,target:"15–30",rest:75,bandOptions:["Purple 25–40 lb","Yellow 40–80 lb","Red 50–125 lb","Black 60–170 lb"],defaultBand:"Purple 25–40 lb",previousMode:"reps"},
   {id:"hollow-rocks",kind:"CORE",name:"Hollow-to-Arch Rocks",detail:"3 × 10–20",sets:3,target:"10–20",rest:60,previousMode:"reps"}
  ]},

@@ -176,7 +176,7 @@ function decisionRank(d:SkillDecision){ return d==="PROGRESS"?0:d==="REGRESS"?1:
 function formatMetric(v:number,u:"s"|"reps"|"EMOM"|"—"){return u==="s"?`${v.toFixed(1)}s`:u==="—"?"—":`${Math.round(v)} ${u}`;}
 function progressionNext(id:string,current:string){
   const map:Record<string,string>={
-    "touch":"Longer Free Front Touch","touch-band":"Lighter Band Front Touch","oap":"Strict BW OAP / Higher Consistency","oap-band":"Lighter Band OAP","flpu":"Cleaner / Higher Full FL Pull-up","flpu-band":"Lighter Band FL Pull-up","pike":"Feet-Elevated Pike Push-up","diamond":"Feet-Elevated Diamond Push-up","archer-push":"Assisted One-Arm Push-up","archer-pull":"Reduced-Assistance Archer / OAP Transition","high-pull":"Higher Chest-to-Bar High Pull","dips":"Band-Resisted / Deeper Dips","pullup":"Chest-to-Bar Pull-up","close-chin":"Chest-to-Bar Chin-up","close-pull":"Chest-to-Bar Close Pull-up","deep":"Feet-Elevated Deep Push-up"
+    "touch":"Wide Front Lever Touch","touch-band":"Lighter Band Front Touch","wide-touch":"Straight Arm Touch (SAT)","sat":"Longer / Cleaner SAT","oap":"Strict BW OAP / Higher Consistency","oap-band":"Lighter Band OAP","flpu":"Cleaner / Higher Full FL Pull-up","flpu-band":"Lighter Band FL Pull-up","pike":"Feet-Elevated Pike Push-up","diamond":"Feet-Elevated Diamond Push-up","archer-push":"Assisted One-Arm Push-up","archer-pull":"Reduced-Assistance Archer / OAP Transition","high-pull":"Higher Chest-to-Bar High Pull","dips":"Band-Resisted / Deeper Dips","pullup":"Chest-to-Bar Pull-up","close-chin":"Chest-to-Bar Chin-up","close-pull":"Chest-to-Bar Close Pull-up","deep":"Feet-Elevated Deep Push-up"
   };
   return map[id]||`${current} → next catalog progression`;
 }

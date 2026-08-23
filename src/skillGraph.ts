@@ -53,6 +53,8 @@ export const SKILL_GRAPHS: SkillGraph[] = [
       {id:"straddle-front-lever", exerciseId:"straddle-front-lever", name:"Straddle Front Lever", difficulty:5, prerequisiteIds:["one-leg-front-lever"]},
       {id:"full-front-lever", exerciseId:"full-front-lever", name:"Full Front Lever", difficulty:5, prerequisiteIds:["straddle-front-lever"]},
       {id:"front-lever-touch", exerciseId:"front-lever-touch", name:"Front Touch", difficulty:5, prerequisiteIds:["full-front-lever"]},
+      {id:"wide-front-lever-touch", exerciseId:"wide-front-lever-touch", name:"Wide Front Lever Touch", difficulty:5, prerequisiteIds:["front-lever-touch"]},
+      {id:"straight-arm-touch", exerciseId:"straight-arm-touch", name:"Straight Arm Touch (SAT)", difficulty:5, prerequisiteIds:["wide-front-lever-touch"]},
     ]
   },
   {
