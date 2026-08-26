@@ -1,6 +1,6 @@
 import { supabase, supabaseConfigured } from './supabase';
 import { EXERCISE_CATALOG, type ExerciseCatalogItem, type ExerciseKind } from '../exercises';
-import type { MobilitySession, SessionSummary, WorkoutLog, AthleteGoals, AthleteBaseline } from '../types';
+import type { MobilitySession, SessionSummary, WorkoutLog, AthleteGoals } from '../types';
 import {
   getCoachDecisions,
   getMobilitySessions,
@@ -68,7 +68,6 @@ export type CoachAthlete = UserProfile & { linked_at: string };
 
 export type AthleteCoachingProfile = AthleteGoals & {
   athlete_id: string;
-  baseline?: AthleteBaseline;
   schedule_days?: number | null;
   equipment?: string[] | null;
   preferences?: Record<string, unknown> | null;
@@ -79,10 +78,7 @@ export async function fetchAthleteCoachingProfile(athleteId: string): Promise<At
   if (!supabase || !supabaseConfigured) return null;
   const { data, error } = await supabase.from('athlete_coaching_profiles').select('*').eq('athlete_id', athleteId).maybeSingle();
   if (error) throw error;
-  return data ? ({
-    ...(data as AthleteCoachingProfile),
-    baseline: ((data as any).preferences?.baseline || (data as any).baseline || undefined),
-  }) : null;
+  return data as AthleteCoachingProfile | null;
 }
 
 export async function saveAthleteCoachingProfile(athleteId: string, profile: AthleteCoachingProfile): Promise<AthleteCoachingProfile> {
@@ -96,13 +92,10 @@ export async function saveAthleteCoachingProfile(athleteId: string, profile: Ath
     p_notes: profile.notes || null,
     p_schedule_days: profile.schedule_days ?? null,
     p_equipment: profile.equipment || [],
-    p_preferences: { ...(profile.preferences || {}), baseline: profile.baseline || (profile.preferences as any)?.baseline || {} },
+    p_preferences: profile.preferences || {},
   });
   if (error) throw error;
-  return {
-    ...(data as AthleteCoachingProfile),
-    baseline: ((data as any)?.preferences?.baseline || profile.baseline || undefined),
-  };
+  return data as AthleteCoachingProfile;
 }
 
 export async function fetchMyCoachingProfile(): Promise<AthleteCoachingProfile | null> {
@@ -110,10 +103,7 @@ export async function fetchMyCoachingProfile(): Promise<AthleteCoachingProfile |
   const userId = await requireUserId();
   const { data, error } = await supabase.from('athlete_coaching_profiles').select('*').eq('athlete_id', userId).maybeSingle();
   if (error) throw error;
-  return data ? ({
-    ...(data as AthleteCoachingProfile),
-    baseline: ((data as any).preferences?.baseline || (data as any).baseline || undefined),
-  }) : null;
+  return data as AthleteCoachingProfile | null;
 }
 
 export async function saveMyCoachingProfile(profile: AthleteCoachingProfile): Promise<AthleteCoachingProfile> {
@@ -127,14 +117,10 @@ export async function saveMyCoachingProfile(profile: AthleteCoachingProfile): Pr
     p_notes: profile.notes || null,
     p_schedule_days: profile.schedule_days ?? null,
     p_equipment: profile.equipment || [],
-    p_preferences: { ...(profile.preferences || {}), baseline: profile.baseline || (profile.preferences as any)?.baseline || {} },
+    p_preferences: profile.preferences || {},
   });
   if (error) throw error;
-  return {
-    ...(data as AthleteCoachingProfile),
-    athlete_id: userId,
-    baseline: ((data as any)?.preferences?.baseline || profile.baseline || undefined),
-  };
+  return { ...(data as AthleteCoachingProfile), athlete_id: userId };
 }
 
 export async function fetchMyProfile(): Promise<UserProfile | null> {

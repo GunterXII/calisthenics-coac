@@ -1,0 +1,11 @@
+{
+  "name":"Calisthenics Coach",
+  "short_name":"Coach",
+  "description":"Premium calisthenics training and progression tracker.",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#09090B",
+  "theme_color":"#09090B",
+  "orientation":"portrait-primary",
+  "icons":[{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

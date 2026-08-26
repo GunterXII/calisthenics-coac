@@ -56,8 +56,10 @@ export function saveMobilitySession(s:MobilitySession){
   localStorage.setItem(MOBILITY_KEY,JSON.stringify([...byId.values()].sort((a,b)=>a.date-b.date)));
 }
 
-export function latestLog(day:DayKey,id:string){
-  return getLogs().filter(x=>x.day===day&&x.exerciseId===id&&!x.skipped).sort((a,b)=>b.date-a.date)[0];
+export function latestLog(day:DayKey,id:string,beforeDate?:number,variantName?:string){
+  return getLogs()
+    .filter(x=>x.day===day&&x.exerciseId===id&&!x.skipped&&(x.status==="complete"||x.status==="modified")&&(beforeDate===undefined||x.date<beforeDate)&&(!variantName||(x.variantName||x.exerciseName)===variantName))
+    .sort((a,b)=>b.date-a.date)[0];
 }
 export function latestSession(day:DayKey){return getSessions().filter(x=>x.day===day).sort((a,b)=>b.date-a.date)[0]}
 
@@ -143,8 +145,9 @@ export function makeCoachHandoff(s:SessionSummary){
       lines.push(`${l.exerciseName}: SKIPPED`);
       return;
     }
+    const currentLogIds=new Set(s.logs.map(x=>x.id));
     const prior=all
-      .filter(x=>x.exerciseId===l.exerciseId&&x.day===l.day&&x.date<s.date&&!x.skipped)
+      .filter(x=>x.exerciseId===l.exerciseId&&x.day===l.day&&!currentLogIds.has(x.id)&&!x.skipped&&(x.status==="complete"||x.status==="modified")&&x.date<l.date&&(!l.variantName||(x.variantName||x.exerciseName)===l.variantName))
       .sort((a,b)=>b.date-a.date)[0];
     const suffix:string[]=[];
     if(l.kind==='EMOM'&&l.result.emom?.length){
@@ -165,7 +168,7 @@ export function makeCoachHandoff(s:SessionSummary){
     if(l.result.fatigue!==undefined)suffix.push(`fatigue ${l.result.fatigue}/5`);
     if(l.status==='modified')suffix.push(`modified: ${l.modification||'unspecified'}`);
     if(l.status==='incomplete')suffix.push('incomplete');
-    lines.push(`${l.exerciseName}: ${suffix.join(' · ')||'completed'}`);
+    lines.push(`${l.variantName||l.exerciseName}: ${suffix.join(' · ')||'completed'}`);
     if(l.result.note && !l.result.note.startsWith('Coach range')) lines.push(`  note: ${l.result.note}`);
   });
   if(s.sessionNote?.trim())lines.push('',`SESSION NOTE: ${s.sessionNote.trim()}`);
@@ -206,6 +209,7 @@ export function exportBackup(){
     variants:getVariants(),
     programOverrides:getProgramOverrides(),
     coachDecisions:getCoachDecisions(),
+    coachProposals:getCoachProposals(),
     mobilitySessions:getMobilitySessions()
   },null,2);
 }
@@ -221,6 +225,7 @@ export function importBackup(text:string){
   localStorage.setItem(VARIANT_KEY,JSON.stringify(data.variants||{}));
   localStorage.setItem(PROGRAM_OVERRIDE_KEY,JSON.stringify(data.programOverrides||{}));
   localStorage.setItem(COACH_DECISION_KEY,JSON.stringify(data.coachDecisions||[]));
+  localStorage.setItem(COACH_PROPOSAL_KEY,JSON.stringify(data.coachProposals||[]));
   localStorage.setItem(MOBILITY_KEY,JSON.stringify(data.mobilitySessions||[]));
 }
 
@@ -242,6 +247,13 @@ export function clearVariant(id:string){
 }
 
 export type CoachDecision={id:string;date:number;type:"program"|"progression"|"coach";exerciseId?:string;title:string;detail:string;from?:string;to?:string};
+
+export type CoachProposal={id:string;date:number;type:"target"|"variant"|"program_review";exerciseId:string;title:string;detail:string;from:string;to:string;reason:string;status:"pending"|"accepted"|"rejected";sessionId?:string};
+const COACH_PROPOSAL_KEY="cc-v15-coach-proposals";
+export function getCoachProposals():CoachProposal[]{try{return JSON.parse(localStorage.getItem(COACH_PROPOSAL_KEY)||"[]")}catch{return[]}}
+export function saveCoachProposal(p:Omit<CoachProposal,"id"|"date">){const next:CoachProposal={...p,id:crypto.randomUUID(),date:Date.now()};localStorage.setItem(COACH_PROPOSAL_KEY,JSON.stringify([...getCoachProposals(),next].slice(-100)));return next}
+export function updateCoachProposal(id:string,status:CoachProposal["status"]){const next=getCoachProposals().map(p=>p.id===id?{...p,status}:p);localStorage.setItem(COACH_PROPOSAL_KEY,JSON.stringify(next));return next.find(p=>p.id===id)}
+
 export function getCoachDecisions():CoachDecision[]{try{return JSON.parse(localStorage.getItem(COACH_DECISION_KEY)||"[]")}catch{return[]}}
 export function saveCoachDecision(d:Omit<CoachDecision,"id"|"date">){const next:{id:string;date:number;type:CoachDecision["type"];exerciseId?:string;title:string;detail:string;from?:string;to?:string}={...d,id:crypto.randomUUID(),date:Date.now()};localStorage.setItem(COACH_DECISION_KEY,JSON.stringify([...getCoachDecisions(),next].slice(-100)))}
 export function clearCoachDecisions(){localStorage.removeItem(COACH_DECISION_KEY)}

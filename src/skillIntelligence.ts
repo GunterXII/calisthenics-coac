@@ -33,7 +33,7 @@ const sum = (v: unknown) => Array.isArray(v) ? v.reduce((a:number,b:any)=>a+n(b)
 function metric(log: Log) {
   const r = log?.result || {};
   if (Array.isArray(r.seconds) && r.seconds.length) return { value: Math.max(...r.seconds.map(n)), unit:"s" as const };
-  if (Array.isArray(r.reps) && r.reps.length) return { value: Math.max(...r.reps.map(n)), unit:"reps" as const };
+  if (Array.isArray(r.reps) && r.reps.length) return { value: sum(r.reps), unit:"reps" as const };
   if (Array.isArray(r.emom) && r.emom.length) return { value: sum(r.emom), unit:"EMOM" as const };
   return { value:0, unit:"—" as const };
 }
@@ -94,10 +94,10 @@ function specificQualification(id:string, log:Log, block:ExerciseBlock, catalog?
       const sides=Array.isArray(r.sides)?r.sides:[];
       const right=reps.filter((_:number,i:number)=>sides[i]==="R").filter((v:number)=>v>=2).length;
       const left=reps.filter((_:number,i:number)=>sides[i]==="L").filter((v:number)=>v>=2).length;
-      return reps.length>=6 && sides.length>=6 && right>=2 && left>=2 && (rir==null || rir>=1);
+      return reps.length>=6 && right>=2 && left>=2 && (rir==null || rir>=1);
     }
     case "oap-band": return reps.length>=6 && allAtLeast(reps.slice(0,6),5) && (rir==null || rir>=1);
-    case "flpu": return reps.length>=5 && reps.slice(0,5).every((v:number)=>v>=4) && clean;
+    case "flpu": return reps.length>=5 && allAtLeast(reps.slice(0,5),4) && clean;
     case "flpu-band": return reps.length>=3 && allAtLeast(reps.slice(0,3),6) && (rir==null || rir>=1);
     case "pike": return reps.length>=3 && allAtLeast(reps.slice(0,3),10) && (rir==null || rir>=1);
     case "diamond": return reps.length>=3 && allAtLeast(reps.slice(0,3),15) && (rir==null || rir>=1);
