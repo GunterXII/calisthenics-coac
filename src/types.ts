@@ -15,11 +15,20 @@ export type ProgressionCriteria =
 
 
 export interface MicroStep { id:string; name:string; dose:string; timerSec?:number; }
+export interface TargetProgressionCriteria {
+  criteria:ProgressionCriteria;
+  maxIncrement?:number;
+}
+export interface VariantMasteryCriteria {
+  criteria:ProgressionCriteria;
+  nextVariantId:string;
+}
 export interface ProgressionSpec {
   current:string;
   next:string;
   rule:string;
-  criteria?:ProgressionCriteria;
+  targetProgression:TargetProgressionCriteria;
+  variantMastery:VariantMasteryCriteria;
   regression?:string;
   bandMode?:BandMode;
 }
@@ -44,11 +53,11 @@ export interface Readiness {
   sleepHours?:number; weightKg?:number; energy?:number; wristPain?:number; elbowPain?:number;
 }
 export interface WorkoutLog {
-  id:string; date:number; day:DayKey; exerciseId:string; exerciseName:string; variantName?:string; kind:BlockKind;
+  id:string; sessionId:string; date:number; day:DayKey; exerciseId:string; exerciseName:string; variantId?:string; variantName?:string; kind:BlockKind;
   status:BlockStatus; skipped?:boolean; modification?:string;
   result:{
     reps?:number[]; seconds?:number[]; emom?:number[]; sides?:("R"|"L")[];
-    band?:Band; rir?:number; fatigue?:number; note?:string;
+    band?:Band; rir?:number; fatigue?:number; quality?:("Clean"|"Shaky"|"Lost position")[]; note?:string;
   };
 }
 export interface AthleteGoals {
@@ -60,8 +69,10 @@ export interface AthleteGoals {
 }
 
 export interface AthleteBaseline { pushups?:number; dips?:number; pullups?:number; oap?:number; flPullups?:number; frontTouchSec?:number; }
+export type ReadinessGateStatus = "PASS"|"BLOCK"|"UNKNOWN";
 export interface ReadinessAnalysis {
   score:number;
+  gates:{pain:ReadinessGateStatus;sleep:ReadinessGateStatus;energy:ReadinessGateStatus;overall:ReadinessGateStatus};
   status:"READY"|"CAUTION"|"RECOVERY"|"PAIN_REVIEW";
   reasons:string[];
   allowProgression:boolean;
@@ -84,7 +95,8 @@ export interface BodyweightPerformance {
 }
 export interface ProgressionEvaluation {
   qualifies:boolean;
-  qualityScore:number;
+  qualityKnown:boolean;
+  qualityScore?:number;
   stabilityScore:number;
   reasons:string[];
   sidePerformance?:SidePerformance;
@@ -97,7 +109,7 @@ export interface SessionSummary {
   sessionNote?:string;
 }
 
-export interface ProgramOverride { exerciseId:string; catalogExerciseId?:string; name?:string; detail?:string; kind?:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; target?:string; sets?:number; rest?:number; minutes?:number; bandOptions?:Band[]; defaultBand?:Band; updatedAt:number; previous?:ProgramOverride|null; }
+export interface ProgramOverride { exerciseId:string; variantId?:string; catalogExerciseId?:string; name?:string; detail?:string; kind?:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; target?:string; sets?:number; rest?:number; minutes?:number; bandOptions?:Band[]; defaultBand?:Band; updatedAt:number; previous?:ProgramOverride|null; }
 export interface CoachDecision { id:string; date:number; type:"program"|"progression"|"coach"; exerciseId?:string; title:string; detail:string; from?:string; to?:string; }
 
 export interface CurrentVariantState {
@@ -109,6 +121,24 @@ export interface CurrentVariantState {
   updatedAt:number;
   lastCoachAction:"none"|"promote"|"hold";
 }
+
+export interface ExerciseExposureKey {
+  exerciseId:string;
+  variantId:string;
+}
+export function exerciseExposureKey(exerciseId:string, variantId?:string):ExerciseExposureKey {
+  return {exerciseId, variantId:variantId||exerciseId};
+}
+export function exerciseExposureKeyString(key:ExerciseExposureKey):string {
+  return `${key.exerciseId}::${key.variantId}`;
+}
+
+export interface CoachProposal {
+  id:string; date:number; type:"target"|"variant"|"program_review"; exerciseId:string; variantId?:string;
+  title:string; detail:string; from:string; to:string; reason:string;
+  status:"pending"|"accepted"|"rejected"; sessionId?:string;
+}
+
 export interface WorkoutDraft {
   id:string;
   startedAt:number;
