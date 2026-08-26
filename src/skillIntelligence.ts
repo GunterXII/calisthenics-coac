@@ -1,5 +1,6 @@
 import type { ExerciseCatalogItem } from "./exercises";
 import type { ExerciseBlock } from "./types";
+import {evaluateProgression,criteriaForBlock} from "./coachingEngine";
 
 export type SkillDecision = "PROGRESS" | "HOLD" | "REGRESS" | "REVIEW" | "BUILDING";
 export type SkillLevel = "GREEN" | "YELLOW" | "RED";
@@ -73,52 +74,7 @@ function readinessPenalty(session:Session) {
 }
 
 function specificQualification(id:string, log:Log, block:ExerciseBlock, catalog?:ExerciseCatalogItem) {
-  if (log?.status !== "complete") return false;
-  const r=log.result||{};
-  const reps=Array.isArray(r.reps)?r.reps.map(n):[];
-  const secs=Array.isArray(r.seconds)?r.seconds.map(n):[];
-  const emom=Array.isArray(r.emom)?r.emom.map(n):[];
-  const rir=r.rir==null ? undefined : n(r.rir);
-  const range=targetRange(block.target,catalog);
-  const clean=cleanRatio(log)>=0.8;
-  const within=(v:number)=>range.min>0 ? v>=range.min : v>0;
-  const allWithin=(values:number[])=>values.length>0&&values.every(within);
-  const allAtLeast=(values:number[],min:number)=>values.length>0&&values.every(v=>v>=min);
-
-  switch(id){
-    case "touch":
-      return secs.length>=3 && secs.slice(0,3).every((v:number)=>v>=8) && cleanRatio(log)===1;
-    case "touch-band":
-      return secs.length>=3 && secs.slice(0,3).every((v:number)=>v>=8) && (rir==null || rir>=1);
-    case "oap": {
-      const sides=Array.isArray(r.sides)?r.sides:[];
-      const right=reps.filter((_:number,i:number)=>sides[i]==="R").filter((v:number)=>v>=2).length;
-      const left=reps.filter((_:number,i:number)=>sides[i]==="L").filter((v:number)=>v>=2).length;
-      return reps.length>=6 && right>=2 && left>=2 && (rir==null || rir>=1);
-    }
-    case "oap-band": return reps.length>=6 && allAtLeast(reps.slice(0,6),5) && (rir==null || rir>=1);
-    case "flpu": return reps.length>=5 && allAtLeast(reps.slice(0,5),4) && clean;
-    case "flpu-band": return reps.length>=3 && allAtLeast(reps.slice(0,3),6) && (rir==null || rir>=1);
-    case "pike": return reps.length>=3 && allAtLeast(reps.slice(0,3),10) && (rir==null || rir>=1);
-    case "diamond": return reps.length>=3 && allAtLeast(reps.slice(0,3),15) && (rir==null || rir>=1);
-    case "archer-push": case "archer-pull": return reps.length>=6 && allAtLeast(reps.slice(0,6),8);
-    case "high-pull": return reps.length>=4 && allAtLeast(reps.slice(0,4),5) && clean;
-    case "dips": return emom.length>=10 && Math.min(...emom)>=30 && (emomStats(emom).drop<15) && (rir==null || rir>=2);
-    case "pullup": return emom.length>=10 && Math.min(...emom)>=12 && emomStats(emom).drop<15;
-    case "close-chin": return emom.length>=10 && Math.min(...emom)>=10 && emomStats(emom).drop<15;
-    case "close-pull": return emom.length>=10 && Math.min(...emom)>=9 && emomStats(emom).drop<15;
-    case "deep": return emom.length>=10 && Math.max(...emom)>=12 && emomStats(emom).drop<15;
-    default:
-      if (catalog?.kind === "HOLD" || block.kind === "SKILL_STATIC") return secs.length>=Math.max(3,block.sets||3) && allWithin(secs.slice(0,block.sets||3)) && clean;
-      if (catalog?.kind === "REPS" || block.kind === "SKILL_REPS" || block.kind === "PERFORMANCE") return reps.length>=Math.max(3,block.sets||3) && allWithin(reps.slice(0,block.sets||3)) && (rir==null || rir>=1);
-      return false;
-  }
-}
-
-function emomStats(v:number[]){
-  if(!v.length)return{drop:100};
-  const best=Math.max(...v),worst=Math.min(...v);
-  return {drop:best?((best-worst)/best)*100:100};
+  return evaluateProgression(block,{exerciseId:String(log?.exerciseId||id),status:String(log?.status||"incomplete"),result:log?.result||{},session:{readiness:log?.__session?.readiness,date:log?.date}},criteriaForBlock(block)).qualifies;
 }
 
 function lastLogsFor(sessions:Session[], id:string, catalogId?:string) {

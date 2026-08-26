@@ -8,6 +8,7 @@ import type {
   SidePerformance,
 } from "./types";
 import type { ExerciseCatalogItem } from "./exercises";
+import {PROGRESSIONS} from "./program";
 
 export interface CoachingLogRecord {
   exerciseId:string;
@@ -60,6 +61,10 @@ export function analyzeReadiness(readiness?:Readiness):ReadinessAnalysis{
   return {score:Math.round(score),status:"READY",reasons:reasons.length?reasons:["Readiness supports planned work"],allowProgression:true,recommendedLoadMultiplier:1};
 }
 
+export function qualityIsKnown(log:CoachingLogRecord){
+  return explicitQuality(log) !== undefined;
+}
+
 function explicitQuality(log:CoachingLogRecord){
   const note=String(log.result.note||"");
   const match=note.match(/qualities\s+([^;]+)/i);
@@ -71,7 +76,7 @@ function explicitQuality(log:CoachingLogRecord){
 
 export function qualityScore(log:CoachingLogRecord, expectedAttempts?:number){
   const explicit=explicitQuality(log);
-  let score=explicit ?? 0.82;
+  let score=explicit ?? 0;
   if(log.status!=="complete")score=Math.min(score,0.35);
   if(typeof log.result.rir==="number"){
     if(log.result.rir<=0)score-=0.12;
@@ -125,6 +130,7 @@ export function evaluateProgression(
 ):ProgressionEvaluation{
   const reps=nums(log.result.reps),seconds=nums(log.result.seconds),emom=nums(log.result.emom);
   const reasons:string[]=[];
+  const qualityKnown = qualityIsKnown(log);
   const quality=qualityScore(log);
   let qualifies=false;
   let stabilityScore=100;
@@ -138,14 +144,18 @@ export function evaluateProgression(
     side=sidePerformance(reps,log.result.sides||[],criteria.minReps);
     const sidePass=criteria.side==="both"?Boolean(side&&side.rightQualifying>=(criteria.minQualifyingRepsPerSide??1)&&side.leftQualifying>=(criteria.minQualifyingRepsPerSide??1)):true;
     qualifies=perSet&&sidePass;
-    if(criteria.minRir!=null && (log.result.rir??Infinity)<criteria.minRir)qualifies=false;
-    if(criteria.requireClean && quality<0.8)qualifies=false;
+    if(criteria.minRir!=null && (log.result.rir==null || log.result.rir<criteria.minRir))qualifies=false;
+    if(criteria.requireClean && (!qualityKnown || quality<0.8))qualifies=false;
     if(!perSet)reasons.push(`Need ${criteria.minSets} sets at ${criteria.minReps}+ reps.`);
+    if(criteria.minRir!=null && log.result.rir==null)reasons.push("RIR is not recorded; progression evidence is incomplete.");
+    if(criteria.requireClean && !qualityKnown)reasons.push("Execution quality is not recorded; progression evidence is incomplete.");
     if(!sidePass)reasons.push("Both sides must meet the OAP consistency standard.");
   } else if(criteria.type==="seconds"){
     qualifies=seconds.length>=criteria.minHolds && seconds.slice(0,criteria.minHolds).every(v=>v>=criteria.minSeconds);
-    if(criteria.minRir!=null&&(log.result.rir??Infinity)<criteria.minRir)qualifies=false;
-    if(criteria.requireClean&&quality<0.8)qualifies=false;
+    if(criteria.minRir!=null&&(log.result.rir==null || log.result.rir<criteria.minRir))qualifies=false;
+    if(criteria.requireClean&&(!qualityKnown || quality<0.8))qualifies=false;
+    if(criteria.minRir!=null && log.result.rir==null)reasons.push("RIR is not recorded; progression evidence is incomplete.");
+    if(criteria.requireClean && !qualityKnown)reasons.push("Execution quality is not recorded; progression evidence is incomplete.");
     if(!qualifies)reasons.push(`Need ${criteria.minHolds} clean holds at ${criteria.minSeconds}s+.`);
   } else if(criteria.type==="emom"){
     const stats=emomStability(emom);
@@ -155,7 +165,7 @@ export function evaluateProgression(
     const lastOk=criteria.minLastVsFirstPct==null||stats.lastVsFirstPct>=criteria.minLastVsFirstPct;
     const volumeOk=emom.length>=criteria.minutes&&emom.slice(0,criteria.minutes).every(v=>v>=criteria.minPerMinute);
     qualifies=volumeOk&&dropOk&&cvOk&&lastOk;
-    if(criteria.minRir!=null&&(log.result.rir??Infinity)<criteria.minRir)qualifies=false;
+    if(criteria.minRir!=null&&(log.result.rir==null || log.result.rir<criteria.minRir))qualifies=false;
     if(!volumeOk)reasons.push(`Need ${criteria.minutes} minutes at ${criteria.minPerMinute}+ reps/min.`);
     if(!dropOk||!cvOk||!lastOk)reasons.push(`EMOM stability is ${Math.round(stats.score)}/100; keep output more even across the block.`);
   } else {
@@ -172,4 +182,33 @@ export function evaluateProgression(
 export function referenceWeightFromLogs(logs:CoachingLogRecord[]){
   const weights=logs.map(x=>x.session?.readiness?.weightKg).filter((x):x is number=>typeof x==="number"&&x>0);
   return weights.length?weights[weights.length-1]:undefined;
+}
+
+
+export function criteriaForBlock(block:ExerciseBlock):ProgressionCriteria {
+  const target=parseTargetRange(block.target);
+  const rule=(PROGRESSIONS[block.id]?.rule||block.detail||"").toLowerCase();
+  const sets=Math.max(1,block.sets||3);
+  const upper=target.max>0?target.max:1;
+  if(block.id==="touch" || block.id==="front-lever-touch") return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
+  if(block.id==="oap") return {type:"reps",minSets:sets,minReps:2,minRir:3,requireClean:true,consecutiveSessions:2,side:"both",minQualifyingRepsPerSide:2};
+  if(block.kind==="SKILL_STATIC") return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
+  if(block.kind==="EMOM") return {type:"emom",minutes:Math.max(1,block.minutes||10),minPerMinute:upper,maxDropoffPct:15,maxCvPct:20,minLastVsFirstPct:85,consecutiveSessions:2,minRir: block.id==="dips"?2:undefined};
+  return {type:"reps",minSets:sets,minReps:upper,minRir:rule.includes("rir")?1:undefined,requireClean:true,consecutiveSessions:2};
+}
+
+export function progressionStreak(block:ExerciseBlock, logs:CoachingLogRecord[], criteria:ProgressionCriteria):number {
+  let streak=0;
+  for(let i=logs.length-1;i>=0;i--){
+    const ev=evaluateProgression(block,logs[i],criteria);
+    if(!ev.qualifies) break;
+    streak++;
+    if(streak>=(criteria.consecutiveSessions||1)) break;
+  }
+  return streak;
+}
+
+export function variantMasteryCriteria(block:ExerciseBlock):ProgressionCriteria {
+  if(block.id==="touch" || block.id==="front-lever-touch") return {type:"seconds",minHolds:3,minSeconds:8,minRir:1,requireClean:true,consecutiveSessions:2};
+  return criteriaForBlock(block);
 }

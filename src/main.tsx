@@ -11,6 +11,7 @@ import {getSession, signInWithPassword, signUpWithPassword, resetPassword, signO
 import {buildSkillGraphViews, type SkillGraphView} from "./skillGraph";
 import {appendLogs,emomStats,exportBackup,formatClock,getDraft,getLogs,getSessions,getSetting,getTarget,getVariant,importBackup,latestLog,latestSession,makeSessionReport,makeWeeklyReport,replaceSession,saveMobilitySession,saveDraft,clearDraft,saveSession,setSetting,setTarget,setVariant,getProgramOverrides,getProgramOverride,setProgramOverride,restoreProgramOverride,clearProgramOverride,clearAllProgramOverrides,getCoachDecisions,saveCoachDecision,makeCoachHandoff,getEmomDuration,setEmomDuration,getCoachProposals,saveCoachProposal,updateCoachProposal,type CoachProposal} from "./storage";
 import {analyzeSkillIntelligence,type SkillInsight} from "./skillIntelligence";
+import {evaluateProgression,criteriaForBlock,variantMasteryCriteria,progressionStreak} from "./coachingEngine";
 import "./styles.css";
 
 const DAYS:DayKey[]=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
@@ -463,7 +464,7 @@ function CoachProgramEditor({athleteId,day,block,remoteBlock,sortOrder,catalog,o
 }
 
 function App(){
- const [tab,setTab]=useState<"today"|"plan"|"reports">("today");
+ const [tab,setTab]=useState<"today"|"plan"|"reports"|"settings">("today");
  const [day,setDay]=useState<DayKey>(DAYS[(new Date().getDay()+6)%7]);
  const [player,setPlayer]=useState<any>(null);
  const [draft,setDraft]=useState<any>(()=>getDraft());
@@ -525,6 +526,7 @@ function App(){
     {tab==="today"&&<Today day={day} setDay={setDay} start={start} draft={draft} onResume={resume}/>}
     {tab==="plan"&&<Plan day={day} setDay={setDay} refresh={refresh} remoteCatalog={exerciseCatalog}/>}
     {tab==="reports"&&<Reports refresh={refresh}/>}
+    {tab==="settings"&&<Settings/>}
   </main>
   <Nav tab={tab} setTab={setTab}/>
  </div>
@@ -570,7 +572,7 @@ function Header({email,syncing,onSignOut}:{email?:string;syncing?:boolean;onSign
  </header>
 }
 function Nav({tab,setTab}:{tab:string;setTab:(x:any)=>void}){
- return <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"><div className="mx-auto grid h-[68px] max-w-5xl grid-cols-3 sm:h-[72px]">{[["today","TODAY"],["plan","PLAN"],["reports","REPORTS"]].map(([id,l])=><button key={id} aria-label={l} onClick={()=>setTab(id)} className={`text-[10px] font-bold ${tab===id?"text-violet2":"text-zinc-600"}`}>{l}</button>)}</div></nav>
+ return <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"><div className="mx-auto grid h-[68px] max-w-5xl grid-cols-4 sm:h-[72px]">{[["today","TODAY"],["plan","PLAN"],["reports","REPORTS"],["settings","SETTINGS"]].map(([id,l])=><button key={id} aria-label={l} onClick={()=>setTab(id)} className={`text-[9px] font-bold ${tab===id?"text-violet2":"text-zinc-600"}`}>{l}</button>)}</div></nav>
 }
 
 
@@ -623,8 +625,8 @@ function scoreSessionSignals(session:SessionSummary){
 }
 function PRMoments({session}:{session:SessionSummary}){
  const all=getSessions().filter(s=>s.id!==session.id); const moments:string[]=[];
- const previousBest=(id:string,kind:"reps"|"static"|"emom")=>{let best=0;for(const s of all){for(const l of s.logs){if(l.exerciseId!==id||l.status==="skipped")continue;const v=kind==="static"?Math.max(...(l.result.seconds||[0])):kind==="emom"?(l.result.emom||[]).reduce((a,b)=>a+b,0):Math.max(...(l.result.reps||[0]));best=Math.max(best,v)}}return best};
- for(const l of session.logs){if(l.status==="skipped")continue;const v=l.kind==="SKILL_STATIC"?Math.max(...(l.result.seconds||[0])):l.kind==="EMOM"?(l.result.emom||[]).reduce((a,b)=>a+b,0):Math.max(...(l.result.reps||[0]));if(v<=0)continue;const k=l.kind==="SKILL_STATIC"?"static":l.kind==="EMOM"?"emom":"reps";const prev=previousBest(l.exerciseId,k as any);if(v>prev)moments.push(`${l.exerciseName}: ${l.kind==="SKILL_STATIC"?`${v.toFixed(1)}s`:`${v} reps`}${prev?` · +${(v-prev).toFixed(k==="static"?1:0)}`:" · FIRST PR"}`)}
+ const previousBest=(id:string,variant:string,kind:"reps"|"static"|"emom")=>{let best=0;for(const s of all){for(const l of s.logs){if(l.exerciseId!==id||l.status==="skipped"||logVariantName(l)!==variant)continue;const v=kind==="static"?Math.max(...(l.result.seconds||[0])):kind==="emom"?(l.result.emom||[]).reduce((a,b)=>a+b,0):Math.max(...(l.result.reps||[0]));best=Math.max(best,v)}}return best};
+ for(const l of session.logs){if(l.status==="skipped")continue;const v=l.kind==="SKILL_STATIC"?Math.max(...(l.result.seconds||[0])):l.kind==="EMOM"?(l.result.emom||[]).reduce((a,b)=>a+b,0):Math.max(...(l.result.reps||[0]));if(v<=0)continue;const k=l.kind==="SKILL_STATIC"?"static":l.kind==="EMOM"?"emom":"reps";const prev=previousBest(l.exerciseId,logVariantName(l),k as any);if(v>prev)moments.push(`${l.exerciseName}${l.variantName?` · ${l.variantName}`:""}: ${l.kind==="SKILL_STATIC"?`${v.toFixed(1)}s`:`${v} reps`}${prev?` · +${(v-prev).toFixed(k==="static"?1:0)}`:" · FIRST PR"}`)}
  if(!moments.length)return null;
  return <section className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4"><div className="section-kicker text-emerald-300">TODAY'S WINS</div><div className="mt-3 grid gap-2 sm:grid-cols-2">{moments.slice(0,4).map(x=><div key={x} className="rounded-xl border border-emerald-500/10 bg-panel p-3 text-[10px] font-bold text-zinc-300">{x}</div>)}</div></section>
 }
@@ -645,7 +647,7 @@ function Today({day,setDay,start,draft,onResume}:{day:DayKey;setDay:(x:DayKey)=>
   <AthleteGoalCard />
   <div className="mt-4 grid gap-2 md:grid-cols-2">
     {last?<div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4"><div className="section-kicker">LAST SESSION</div><div className="mt-2 flex flex-wrap gap-3 text-[10px] text-zinc-400"><span>{Math.round(last.durationSec/60)} min</span><span>{last.totalReps} reps</span><span>{last.emomReps} EMOM</span></div></div>:<div className="rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">FIRST SESSION</div><p className="mt-2 text-[10px] leading-5 text-zinc-500">Your performance history will appear here after the first completed session.</p></div>}
-    <div className="rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">TODAY'S FOCUS</div><p className="mt-2 text-[10px] leading-5 text-zinc-500">Follow the prescribed variant first. Progression candidates are reviewed from logged performance after the session.</p>{draft&&<div className="mt-2 text-[8px] font-bold tracking-[.12em] text-violet2">UNFINISHED SESSION AVAILABLE · RESUME WHERE YOU LEFT OFF</div>}</div>
+    
   </div>
  </div>
 }
@@ -750,12 +752,12 @@ function Reports({refresh}:{refresh:number}){
   <div className="mt-2 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between"><div><div className="field-label">BEST STATIC</div><div className="mt-1 text-xl font-extrabold">{best?`${best.toFixed(1)}s`:"—"}</div></div><div className="text-right"><div className="field-label">CURRENT WEEK</div><div className="mt-1 text-sm font-bold">{weekSessions.length} sessions</div></div></div></div>
   <div className="mt-6 rounded-2xl border border-line bg-panel p-4">
    <div className="flex items-end justify-between gap-3"><div><div className="section-kicker">RECENT COMPLETED WORKOUTS</div><p className="mt-1 text-[9px] text-zinc-600">Open any session to review the full execution and coach report.</p></div><span className="tag">LAST {Math.min(7,sessions.length)}</span></div>
-   <div className="mt-3 grid gap-2">{sessions.slice(0,7).map(s=><button key={s.id} onClick={()=>setSelected(s.id)} className={`history-card text-left ${selected===s.id?"selected":""}`}><div><b>{s.day}</b><span>{new Date(s.date).toLocaleDateString()}</span></div><span className="tabular-nums">{formatClock(s.durationSec)} · {s.totalReps} reps · {s.emomReps} EMOM</span></button>)}{!sessions.length&&<p className="mt-3 text-xs text-zinc-600">No completed sessions yet.</p>}</div>
+   <div className="mt-3 grid gap-2">{sessions.slice(0,7).map(s=><button key={s.id} onClick={()=>setSelected(s.id)} className={`history-card text-left ${selected===s.id?"selected":""}`}><div><b>{s.day}</b><span>{new Date(s.date).toLocaleDateString()}</span></div><span className="tabular-nums">{formatClock(s.durationSec)} · {s.totalReps} reps · {s.emomReps} EMOM · <b>{scoreSessionSignals(s).status}</b></span></button>)}{!sessions.length&&<p className="mt-3 text-xs text-zinc-600">No completed sessions yet.</p>}</div>
   </div>
   <WeeklyReview sessions={weekSessions}/>
   <div className="mt-6 rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">TRAINING TIMELINE</div><div className="mt-3 grid gap-2">{sessions.slice(0,12).map(s=><div key={s.id} className="history-row"><span>{new Date(s.date).toLocaleDateString()}</span><strong>{s.day}</strong><span>{formatClock(s.durationSec)} · {s.totalReps} reps</span></div>)}{!sessions.length&&<p className="text-xs text-zinc-600">No timeline yet.</p>}</div></div>
   <div className="mt-6 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between gap-3"><div><div className="section-kicker">COACH EXPORT</div><div className="mt-1 text-[9px] text-zinc-600">Weekly report for your coach.</div></div><button className="secondary-cta !py-2" onClick={()=>setShowWeekly(v=>!v)}>{showWeekly?"HIDE":"VIEW"}</button></div>{showWeekly&&<><div className="mt-4 flex gap-2 overflow-x-auto pb-1">{[0,1,2,3,4].map(n=><button key={n} onClick={()=>setOffset(n)} className={`rounded-lg border px-3 py-2 text-[9px] font-bold whitespace-nowrap ${offset===n?"border-violet-500/40 bg-violet-500/10 text-violet2":"border-line bg-panel2 text-zinc-600"}`}>{n===0?"THIS WEEK":`WEEK -${n}`}</button>)}</div><pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-panel2 p-3 font-sans text-[9px] leading-5 text-zinc-400">{report}</pre><div className="mt-3 grid grid-cols-2 gap-2"><button className="primary-cta" onClick={copy}>{copied?"COPIED":"COPY"}</button><button className="secondary-cta" onClick={()=>download(report,`weekly-coach-report-${offset}.txt`)}><Download size={14}/>EXPORT</button></div></>}</div>
-  {selected&&<SessionDetail session={sessions.find(s=>s.id===selected)!} onClose={()=>setSelected(null)}/>}<CoachLinkCard onLinked={()=>{}}/><AthleteProfileEditor/><DataBackup/>
+  {selected&&<SessionDetail session={sessions.find(s=>s.id===selected)!} onClose={()=>setSelected(null)}/>}
  </div>
 }
 function SessionDetail({session,onClose}:{session:SessionSummary;onClose:()=>void}){
@@ -764,6 +766,7 @@ function SessionDetail({session,onClose}:{session:SessionSummary;onClose:()=>voi
  return <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/95 backdrop-blur"><div className="mx-auto max-w-2xl px-4 py-8"><div className="flex justify-between"><div><div className="eyebrow">COMPLETED SESSION</div><h2 className="mt-2 text-3xl font-extrabold">{session.day}</h2><p className="mt-1 text-[10px] text-zinc-600">{new Date(session.date).toLocaleString()}</p></div><button className="secondary-cta" onClick={onClose}>CLOSE</button></div><div className="mt-5 grid grid-cols-3 gap-2"><Metric label="TIME" value={formatClock(session.durationSec)}/><Metric label="REPS" value={session.totalReps}/><Metric label="EMOM" value={session.emomReps}/></div><div className="mt-4 rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">SESSION REPORT</div><pre className="mt-3 whitespace-pre-wrap font-sans text-[10px] leading-5 text-zinc-300">{report}</pre></div><div className="mt-4"><span className="field-label">SESSION NOTE</span><textarea value={note} onChange={e=>setNote(e.target.value)} className="mt-1 min-h-[100px] w-full rounded-xl border border-line bg-panel2 p-3 text-xs" placeholder="Anything worth telling coach?"/></div><button className="primary-cta mt-3 w-full" onClick={save}>SAVE CHANGES</button></div></div>
 }
 
+function Settings(){return <div><div className="eyebrow">SETTINGS</div><h1>App settings.</h1><p className="sub">Profile, coach connection and local data stay outside performance reports.</p><CoachLinkCard onLinked={()=>{}}/><AthleteProfileEditor/><DataBackup/></div>}
 function AthleteProfileEditor(){
  const defaults:AthleteCoachingProfile={athlete_id:"local",primaryGoal:"",secondaryGoals:[],prioritySkills:[],targetDate:"",notes:"",schedule_days:6,equipment:["Pull-up bar","Dip bars","Loop bands","Parallettes"],preferences:{}};
  const [profile,setProfile]=useState<AthleteCoachingProfile>(()=>getLocalAthleteProfile()||defaults);
@@ -904,66 +907,26 @@ function buildSession(a:any,logs:WorkoutLog[]):SessionSummary{
  return{id:String(a.started),date:Date.now(),day:a.day,durationSec:Math.round((Date.now()-a.started)/1000),readiness:a.readiness,logs,totalReps:logs.reduce((s,l)=>s+(l.result.reps?.reduce((x,y)=>x+y,0)||0),0),emomReps:logs.reduce((s,l)=>s+(l.result.emom?.reduce((x,y)=>x+y,0)||0),0),bestSkillSeconds:logs.filter((l:WorkoutLog)=>l.kind==="SKILL_STATIC").reduce((m,l)=>Math.max(m,Math.max(...(l.result.seconds||[0]))),0)};
 }
 
+function coachingRecord(log:WorkoutLog){return {exerciseId:log.exerciseId,status:log.status,result:log.result,session:{readiness:undefined,date:log.date}};}
+function criteriaFor(block:ExerciseBlock){return criteriaForBlock(block);}
 function meetsCurrentProgression(blockId:string, log:WorkoutLog):boolean{
-  if(log.status!=="complete") return false;
-  const reps=log.result.reps||[];
-  const emom=log.result.emom||[];
-  const rir=log.result.rir;
-  const total=emom.reduce((a,b)=>a+b,0);
-  const drop=emom.length?emomStats(emom).drop:100;
-  switch(blockId){
-    case "pike": return reps.length>=3 && reps.slice(0,3).every(x=>x>=10) && (rir===undefined || rir>=1);
-    case "diamond": return reps.length>=3 && reps.slice(0,3).every(x=>x>=15) && (rir===undefined || rir>=1);
-    case "archer-push": return reps.length>=6 && reps.slice(0,6).every(x=>x>=8);
-    case "archer-pull": return reps.length>=6 && reps.slice(0,6).every(x=>x>=8);
-    case "oap": {
-      const sides=log.result.sides||[];
-      const right=reps.filter((_,i)=>sides[i]==="R").filter(x=>x>=2).length;
-      const left=reps.filter((_,i)=>sides[i]==="L").filter(x=>x>=2).length;
-      return reps.length>=6 && right>=2 && left>=2;
-    }
-    case "high-pull": return reps.length>=4 && reps.slice(0,4).every(x=>x>=5);
-    
-    case "oap-band": return reps.length>=6 && reps.slice(0,6).every(x=>x>=5) && (rir===undefined || rir>=1);
-    case "flpu": return reps.length>=5 && reps.slice(0,5).every(x=>x>=4);
-    case "flpu-band": return reps.length>=3 && reps.slice(0,3).every(x=>x>=6);
-    case "touch": {
-      const vals=log.result.seconds||[];
-      const clean=((log.result.note||'').match(/qualities ([^;]+)/)?.[1]||'').split('/').filter(Boolean);
-      return vals.length>=3 && vals.slice(0,3).every(x=>x>=8) && (!clean.length || clean.slice(0,3).every(q=>q==='Clean'));
-    }
-    case "touch-band": return (log.result.seconds||[]).length>=3 && (log.result.seconds||[]).slice(0,3).every(x=>x>=8);
-    case "curl-a": case "curl-b": case "curl-c": return reps.length>=3 && reps.slice(0,3).every(x=>x>=30);
-    case "lat-a": case "lat-b": case "lat-c": return reps.length>=3 && reps.slice(0,3).every(x=>x>=25) && (rir===undefined || rir>=1);
-    case "tri-a": case "tri-b": case "tri-c": return reps.length>=3 && reps.slice(0,3).every(x=>x>=30);
-    case "bulgarian": return reps.length>=4 && reps.slice(0,4).every(x=>x>=10);
-    case "pistol": return reps.length>=3 && reps.slice(0,3).every(x=>x>=10);
-    case "sl-rdl": return reps.length>=3 && reps.slice(0,3).every(x=>x>=12);
-    case "calf": return reps.length>=3 && reps.slice(0,3).every(x=>x>=20);
-    case "band-legcurl": return reps.length>=3 && reps.slice(0,3).every(x=>x>=20);
-    case "jump-lunge": return reps.length>=3 && reps.slice(0,3).every(x=>x>=8);
-    case "broad-jump": return reps.length>=4 && reps.slice(0,4).every(x=>x>=3);
-    case "cmj": return reps.length>=4 && reps.slice(0,4).every(x=>x>=3);
-    case "dips": case "deep": case "pullup": case "close-chin": case "close-pull":
-      return emom.length>=10 && ((blockId==="dips" && Math.min(...emom)>=30) || (blockId==="pullup" && Math.min(...emom)>=12) || (blockId==="close-chin" && Math.min(...emom)>=10) || (blockId==="close-pull" && Math.min(...emom)>=9) || (blockId==="deep" && Math.max(...emom)>=12)) && drop<15;
-    default: return false;
-  }
+ const block=Object.values(PROGRAM).flatMap(p=>p.blocks).find(b=>b.id===blockId)||effectiveProgram("Monday").blocks.find(b=>b.id===blockId);
+ if(!block)return false;
+ return evaluateProgression(block,coachingRecord(log),criteriaFor(block)).qualifies;
 }
-
 function logVariantName(log:WorkoutLog){return log.variantName||log.exerciseName;}
 function currentVariantLogs(block:ExerciseBlock){
-  const current=currentVariantFor(block.id,block.name);
-  return getLogs().filter(x=>x.exerciseId===block.id&&!x.skipped&&logVariantName(x)===current).sort((a,b)=>a.date-b.date);
+ const current=currentVariantFor(block.id,block.name);
+ return getLogs().filter(x=>x.exerciseId===block.id&&!x.skipped&&(x.status==="complete"||x.status==="modified")&&logVariantName(x)===current).sort((a,b)=>a.date-b.date);
 }
 function progressionCount(blockId:string, block:ExerciseBlock){
-  const logs=currentVariantLogs(block);
-  const current=logs[logs.length-1];
-  const previous=logs[logs.length-2];
-  const now=current?meetsCurrentProgression(blockId,current):false;
-  const before=previous?meetsCurrentProgression(blockId,previous):false;
-  if(now&&before)return {state:"READY",label:"READY FOR COACH REVIEW",detail:"Criterion reached in 2 consecutive sessions."};
-  if(now)return {state:"1/2",label:"1/2 QUALIFYING SESSIONS",detail:"Repeat this standard once more before changing the variant."};
-  return {state:"HOLD",label:"KEEP CURRENT VARIANT",detail:"Keep progressing inside the current prescription."};
+ const logs=currentVariantLogs(block);
+ const criteria=variantMasteryCriteria(block);
+ const streak=progressionStreak(block,logs.slice(-Math.max(2,criteria.consecutiveSessions||2)).map(coachingRecord),criteria);
+ const required=criteria.consecutiveSessions||1;
+ if(streak>=required)return {state:"READY",label:"READY FOR COACH REVIEW",detail:`Criterion reached in ${required} consecutive qualifying exposures.`};
+ if(streak>0)return {state:`${streak}/${required}`,label:`${streak}/${required} QUALIFYING EXPOSURES`,detail:"Repeat this standard once more before changing the variant."};
+ return {state:"HOLD",label:"KEEP CURRENT VARIANT",detail:"Keep progressing inside the current prescription."};
 }
 
 function currentVariantFor(exerciseId:string, fallback:string){
@@ -1063,7 +1026,7 @@ function range(target:string){const n=target.match(/\d+(?:\.\d+)?/g)?.map(Number
 function TargetPanel({block}:{block:ExerciseBlock}){
  const r=range(block.target),[target,setLocal]=useState(getTarget(block.id,r.max)??r.max);
  const save=(v:number)=>{const x=Math.max(r.min,Math.min(r.max,v));setLocal(x);setTarget(block.id,x)};
- return <div className="rounded-2xl border border-line bg-panel p-4"><div className="grid grid-cols-2 gap-4"><div><span className="field-label">COACH RANGE</span><div className="mt-1 text-sm font-bold">{block.target}</div></div><div className="text-right"><span className="field-label">TODAY</span><div className="mt-1 flex items-center justify-end gap-2"><button className="mini-btn" disabled={target<=r.min} onClick={()=>save(target-1)}><Minus size={14}/></button><b className="w-8 text-center">{target}</b><button className="mini-btn" disabled={target>=r.max} onClick={()=>save(target+1)}><Plus size={14}/></button></div></div></div></div>
+ return <div className="rounded-2xl border border-line bg-panel p-4"><div className="grid grid-cols-2 gap-4"><div><span className="field-label">RANGE</span><div className="mt-1 text-sm font-bold">{block.target}</div></div><div className="text-right"><span className="field-label">TODAY</span><div className="mt-1 flex items-center justify-end gap-2"><button className="mini-btn" disabled={target<=r.min} onClick={()=>save(target-1)}><Minus size={14}/></button><b className="w-8 text-center">{target}</b><button className="mini-btn" disabled={target>=r.max} onClick={()=>save(target+1)}><Plus size={14}/></button></div></div></div></div>
 }
 function SetBlock({block,day,onComplete,onStarted,existing,onProgress,sound,vibration}:{block:ExerciseBlock;day:DayKey;onComplete:(l:WorkoutLog)=>void;onStarted:()=>void;existing?:WorkoutLog;onProgress:(l:WorkoutLog)=>void;sound:boolean;vibration:boolean}){
  const r=range(block.target),[reps,setReps]=useState<number[]>(()=>existing?.result.reps||[]),[input,setInput]=useState(""),[rest,setRest]=useState(false),[band,setBand]=useState<Band>(()=>existing?.result.band||defaultBandFor(block)),[rir,setRir]=useState(()=>existing?.result.rir!==undefined?String(existing.result.rir):""),[fatigue,setFatigue]=useState(()=>existing?.result.fatigue?String(existing.result.fatigue):"3"),[editing,setEditing]=useState<number|null>(null),[editValue,setEditValue]=useState("");
@@ -1108,7 +1071,7 @@ function Emom({block,day,onComplete,onStarted,sound,vibration,existing,onProgres
  const adjust=(d:number)=>setTargetLocal(Math.max(r.min,Math.min(r.max,target+d)));
  const adjustMinutes=(d:number)=>{const next=Math.max(5,Math.min(15,minutes+d));setMinutesLocal(next);setEmomDuration(block.id,next);};
  const diff=last!==undefined&&input!==""?Number(input)-last:null,canFinish=phase==="complete"&&vals.length>=minutes;
- return <div className="flex flex-1 flex-col pt-4"><div className="text-center"><div className="text-[9px] tracking-[.16em] text-zinc-600">MINUTE {Math.min(minute,minutes)} / {minutes}</div><div className="mt-2 text-7xl font-extrabold">{phase==="ready"?"01:00":phase==="running"?formatClock(sec):phase==="input"?"ENTER":"DONE"}</div><div className="mt-4 rounded-2xl border border-line bg-panel p-4 text-left"><div className="grid grid-cols-2 gap-4"><div><span className="field-label">COACH RANGE / MIN</span><div className="font-bold">{block.target}</div></div><div className="text-right"><span className="field-label">TODAY</span><div className="mt-1 flex justify-end gap-2"><button className="mini-btn" disabled={target<=r.min} onClick={()=>adjust(-1)}><Minus size={14}/></button><b>{target}</b><button className="mini-btn" disabled={target>=r.max} onClick={()=>adjust(1)}><Plus size={14}/></button></div></div></div><div className="mt-4 border-t border-line pt-3"><div className="flex items-center justify-between"><span className="field-label">DURATION</span><span className="text-[9px] text-zinc-600">Recommended {block.minutes||10} min</span></div><div className="mt-2 flex items-center justify-between gap-2"><button className="mini-btn" disabled={minutes<=5||phase!=="ready"} onClick={()=>adjustMinutes(-1)}><Minus size={14}/></button><div className="text-center"><div className="text-2xl font-extrabold">{minutes} min</div><div className="text-[8px] text-zinc-600">5–15 min · before start</div></div><button className="mini-btn" disabled={minutes>=15||phase!=="ready"} onClick={()=>adjustMinutes(1)}><Plus size={14}/></button></div></div></div>{last!==undefined&&<div className="mt-3 text-[10px] text-zinc-500">LAST M{minute}: <b className="text-white">{last}</b>{diff!==null&&<span className={`ml-2 ${diff>=0?"text-emerald-400":"text-rose-300"}`}>{diff>=0?`+${diff} vs last`:`${diff} vs last`}</span>}</div>}</div>{(phase==="running"||phase==="input")&&<div className="mt-7 rounded-2xl border border-line bg-panel p-4"><div className="field-label">REPS THIS MINUTE</div><div className="mt-2 flex items-center justify-center gap-2"><button className="counter-btn" disabled={logged} onClick={()=>setInput(String(Math.max(0,(Number(input)||0)-1)))}><Minus size={16}/></button><input aria-label="Reps this minute" className="counter-input w-36" inputMode="numeric" value={input} onChange={e=>setInput(e.target.value.replace(/\D/g,""))} placeholder="0" disabled={logged}/><button className="counter-btn" disabled={logged} onClick={()=>setInput(String((Number(input)||0)+1))}><Plus size={16}/></button></div><button className="primary-cta mt-2 w-full" disabled={logged||input===""} onClick={saveMinute}>{logged?`M${minute} SAVED`:`SAVE M${minute}`}</button></div>}{phase==="ready"&&<button className="primary-cta mt-7 w-full" onClick={start}><Play size={15}/>START {minutes}-MIN EMOM</button>}{canFinish&&<button className="primary-cta mt-5 w-full" onClick={()=>finish("complete")}>SAVE & NEXT</button>}{vals.length>0&&phase!=="complete"&&<button className="secondary-cta mt-2 w-full" onClick={()=>finish("incomplete")}>SAVE INCOMPLETE</button>}<div className="mt-5 flex flex-wrap justify-center gap-2">{vals.map((v,i)=><button className="chip" key={i} title="Tap to edit this minute" onClick={()=>{setEditing(i);setEditValue(String(v))}}>M{i+1}: {v}</button>)}</div>{editing!==null&&<div className="mt-3 rounded-xl border border-line bg-panel p-3"><span className="field-label">EDIT MINUTE {editing+1}</span><div className="mt-1 flex items-center gap-2"><button className="counter-btn" onClick={()=>setEditValue(String(Math.max(0,Number(editValue||0)-1)))}><Minus size={16}/></button><input className="counter-input flex-1" inputMode="numeric" value={editValue} onChange={e=>setEditValue(e.target.value.replace(/\D/g,""))}/><button className="counter-btn" onClick={()=>setEditValue(String(Number(editValue||0)+1))}><Plus size={16}/></button></div><div className="mt-2 grid grid-cols-2 gap-2"><button className="secondary-cta" onClick={()=>setEditing(null)}>CANCEL</button><button className="primary-cta" onClick={()=>{const n=Number(editValue);if(n>=0){const next=vals.map((x,j)=>j===editing?n:x);setVals(next);persist(next)}setEditing(null)}}>SAVE EDIT</button></div></div>}{vals.length>0&&<div className="mt-4 rounded-xl border border-line bg-panel p-3 text-center text-[10px] text-muted">TOTAL <b className="text-white">{emomStats(vals).total}</b> · AVG <b className="text-white">{emomStats(vals).avg.toFixed(1)}</b> · DROP-OFF <b className="text-white">{emomStats(vals).drop.toFixed(0)}%</b></div>}<div className="mt-auto grid grid-cols-2 gap-2 pb-4 pt-8"><label><span className="field-label">RIR</span><select value={rir} onChange={e=>setRir(e.target.value)}><option value="">—</option>{[0,1,2,3].map(x=><option key={x}>{x}</option>)}</select></label><label><span className="field-label">FATIGUE</span><select value={fatigue} onChange={e=>setFatigue(e.target.value)}>{[1,2,3,4,5].map(x=><option key={x}>{x}/5</option>)}</select></label></div></div>
+ return <div className="flex flex-1 flex-col pt-4"><div className="text-center"><div className="text-[9px] tracking-[.16em] text-zinc-600">MINUTE {Math.min(minute,minutes)} / {minutes}</div><div className="mt-2 text-7xl font-extrabold">{phase==="ready"?"01:00":phase==="running"?formatClock(sec):phase==="input"?"ENTER":"DONE"}</div><div className="mt-4 rounded-2xl border border-line bg-panel p-4 text-left"><div className="grid grid-cols-2 gap-4"><div><span className="field-label">RANGE / MIN</span><div className="font-bold">{block.target}</div></div><div className="text-right"><span className="field-label">TODAY</span><div className="mt-1 flex justify-end gap-2"><button className="mini-btn" disabled={target<=r.min} onClick={()=>adjust(-1)}><Minus size={14}/></button><b>{target}</b><button className="mini-btn" disabled={target>=r.max} onClick={()=>adjust(1)}><Plus size={14}/></button></div></div></div><div className="mt-4 border-t border-line pt-3"><div className="flex items-center justify-between"><span className="field-label">DURATION</span><span className="text-[9px] text-zinc-600">Recommended {block.minutes||10} min</span></div><div className="mt-2 flex items-center justify-between gap-2"><button className="mini-btn" disabled={minutes<=5||phase!=="ready"} onClick={()=>adjustMinutes(-1)}><Minus size={14}/></button><div className="text-center"><div className="text-2xl font-extrabold">{minutes} min</div><div className="text-[8px] text-zinc-600">5–15 min · before start</div></div><button className="mini-btn" disabled={minutes>=15||phase!=="ready"} onClick={()=>adjustMinutes(1)}><Plus size={14}/></button></div></div></div>{last!==undefined&&<div className="mt-3 text-[10px] text-zinc-500">LAST M{minute}: <b className="text-white">{last}</b>{diff!==null&&<span className={`ml-2 ${diff>=0?"text-emerald-400":"text-rose-300"}`}>{diff>=0?`+${diff} vs last`:`${diff} vs last`}</span>}</div>}</div>{(phase==="running"||phase==="input")&&<div className="mt-7 rounded-2xl border border-line bg-panel p-4"><div className="field-label">REPS THIS MINUTE</div><div className="mt-2 flex items-center justify-center gap-2"><button className="counter-btn" disabled={logged} onClick={()=>setInput(String(Math.max(0,(Number(input)||0)-1)))}><Minus size={16}/></button><input aria-label="Reps this minute" className="counter-input w-36" inputMode="numeric" value={input} onChange={e=>setInput(e.target.value.replace(/\D/g,""))} placeholder="0" disabled={logged}/><button className="counter-btn" disabled={logged} onClick={()=>setInput(String((Number(input)||0)+1))}><Plus size={16}/></button></div><button className="primary-cta mt-2 w-full" disabled={logged||input===""} onClick={saveMinute}>{logged?`M${minute} SAVED`:`SAVE M${minute}`}</button></div>}{phase==="ready"&&<button className="primary-cta mt-7 w-full" onClick={start}><Play size={15}/>START {minutes}-MIN EMOM</button>}{canFinish&&<button className="primary-cta mt-5 w-full" onClick={()=>finish("complete")}>SAVE & NEXT</button>}{vals.length>0&&phase!=="complete"&&<button className="secondary-cta mt-2 w-full" onClick={()=>finish("incomplete")}>SAVE INCOMPLETE</button>}<div className="mt-5 flex flex-wrap justify-center gap-2">{vals.map((v,i)=><button className="chip" key={i} title="Tap to edit this minute" onClick={()=>{setEditing(i);setEditValue(String(v))}}>M{i+1}: {v}</button>)}</div>{editing!==null&&<div className="mt-3 rounded-xl border border-line bg-panel p-3"><span className="field-label">EDIT MINUTE {editing+1}</span><div className="mt-1 flex items-center gap-2"><button className="counter-btn" onClick={()=>setEditValue(String(Math.max(0,Number(editValue||0)-1)))}><Minus size={16}/></button><input className="counter-input flex-1" inputMode="numeric" value={editValue} onChange={e=>setEditValue(e.target.value.replace(/\D/g,""))}/><button className="counter-btn" onClick={()=>setEditValue(String(Number(editValue||0)+1))}><Plus size={16}/></button></div><div className="mt-2 grid grid-cols-2 gap-2"><button className="secondary-cta" onClick={()=>setEditing(null)}>CANCEL</button><button className="primary-cta" onClick={()=>{const n=Number(editValue);if(n>=0){const next=vals.map((x,j)=>j===editing?n:x);setVals(next);persist(next)}setEditing(null)}}>SAVE EDIT</button></div></div>}{vals.length>0&&<div className="mt-4 rounded-xl border border-line bg-panel p-3 text-center text-[10px] text-muted">TOTAL <b className="text-white">{emomStats(vals).total}</b> · AVG <b className="text-white">{emomStats(vals).avg.toFixed(1)}</b> · DROP-OFF <b className="text-white">{emomStats(vals).drop.toFixed(0)}%</b></div>}<div className="mt-auto grid grid-cols-2 gap-2 pb-4 pt-8"><label><span className="field-label">RIR</span><select value={rir} onChange={e=>setRir(e.target.value)}><option value="">—</option>{[0,1,2,3].map(x=><option key={x}>{x}</option>)}</select></label><label><span className="field-label">FATIGUE</span><select value={fatigue} onChange={e=>setFatigue(e.target.value)}>{[1,2,3,4,5].map(x=><option key={x}>{x}/5</option>)}</select></label></div></div>
 }
 
 function isoRange(target:string){
@@ -1137,7 +1100,7 @@ function StaticSkill({block,day,onComplete,onStarted,sound,vibration,existing,on
  const finish=()=>onComplete({id:existing?.id||crypto.randomUUID(),date:Date.now(),day,exerciseId:block.id,exerciseName:block.name,variantName,kind:block.kind,status:"complete",result:{seconds:vals,band,rir:rir?Number(rir):undefined,fatigue:Number(fatigue),note:`Coach range ${block.target}; qualities ${qualities.join("/")}`}});
  const allInRange=vals.length>=Math.max(1,block.sets||3)&&vals.every(v=>v>=r.min&&v<=r.max),allClean=qualities.length===vals.length&&qualities.every(q=>q==="Clean"),maxed=vals.length>0&&vals.length>=Math.max(1,block.sets||3)&&vals.every(v=>v>=r.max);
  return <div className="flex flex-1 flex-col items-center pt-2">
-   <div className="w-full max-w-sm rounded-2xl border border-line bg-panel p-4"><div className="grid grid-cols-2 gap-4"><div><span className="field-label">COACH RANGE</span><div className="mt-1 text-sm font-bold">{r.min}–{r.max}s</div></div><div className="text-right"><span className="field-label">TODAY TARGET</span><div className="mt-1 text-sm font-bold text-violet2">{todayTarget.toFixed(1)}s</div></div></div><div className="mt-3 border-t border-line pt-3 text-center text-[9px] tracking-[.12em] text-zinc-600">SET {Math.min(vals.length+1,block.sets||3)} / {block.sets||3}</div></div>
+   <div className="w-full max-w-sm rounded-2xl border border-line bg-panel p-4"><div className="grid grid-cols-2 gap-4"><div><span className="field-label">RANGE</span><div className="mt-1 text-sm font-bold">{r.min}–{r.max}s</div></div><div className="text-right"><span className="field-label">TODAY</span><div className="mt-1 text-sm font-bold text-violet2">{todayTarget.toFixed(1)}s</div></div></div><div className="mt-3 border-t border-line pt-3 text-center text-[9px] tracking-[.12em] text-zinc-600">SET {Math.min(vals.length+1,block.sets||3)} / {block.sets||3}</div></div>
    <div className="mt-4 text-center text-[10px] text-zinc-500">{lastSeries!==undefined?<>LAST SET {vals.length+1} <b className="text-white">{lastSeries.toFixed(1)}s</b></>:"NO PREVIOUS SET DATA"}</div>
    <div className="mt-8 text-center text-[92px] font-extrabold tracking-tighter sm:text-[132px]">{phase==="count"?count:phase==="hold"?elapsed.toFixed(1):"00.0"}<span className="text-xl text-zinc-600">{phase==="hold"?"s":""}</span></div>
    <div className={`mt-2 text-[9px] font-extrabold tracking-[.16em] ${phase==="hold"?(status==="BELOW"?"text-rose-300":status==="NEAR"?"text-amber-300":status==="MAX"?"text-emerald-400":"text-violet2"):"text-zinc-600"}`}>{phase==="count"?"GET READY":phase==="hold"?(status==="BELOW"?"BELOW TARGET":status==="NEAR"?"NEAR TARGET":status==="MAX"?"TARGET HIT":"TARGET REACHED"):phase==="stopped"?"ATTEMPT SAVED":"READY"}</div>
@@ -1151,26 +1114,22 @@ function StaticSkill({block,day,onComplete,onStarted,sound,vibration,existing,on
 function parseTargetRange(target:string){const m=String(target||"").match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);if(!m)return null;return{min:Number(m[1]),max:Number(m[2])};}
 function proposeTargetProgression(block:ExerciseBlock,log:WorkoutLog):Omit<CoachProposal,"id"|"date">|null{
  if(log.status!=="complete")return null;
- const range=parseTargetRange(block.target);if(!range)return null;
- const r=log.result||{};const rir=r.rir;const quality=String(r.note||"").match(/qualities\s+([^;]+)/i)?.[1]?.split("/").map(x=>x.trim().toLowerCase())||[];
- const clean=quality.length?quality.every(x=>x==="clean"):true;
- const reps=Array.isArray(r.reps)?r.reps.map(Number):[];
- const seconds=Array.isArray(r.seconds)?r.seconds.map(Number):[];
- const emom=Array.isArray(r.emom)?r.emom.map(Number):[];
- const enoughSets=Math.max(1,block.sets||3);
- if(seconds.length>=enoughSets&&seconds.slice(0,enoughSets).every(v=>v>=range.max)&&clean&&(rir===undefined||rir>=1)){
-   const nextMin=Number((range.min+1).toFixed(1)),nextMax=Number((range.max+1).toFixed(1));
-   return{type:"target",exerciseId:block.id,title:`Progress target — ${block.name}`,detail:`Every logged hold reached the top of the current range with clean quality.`,from:block.target,to:`${nextMin}–${nextMax}s`,reason:`Target ceiling reached across ${enoughSets} clean holds with sufficient RIR.` ,status:"pending",sessionId:log.id};
- }
- if(reps.length>=enoughSets&&reps.slice(0,enoughSets).every(v=>v>=range.max)&&clean&&(rir===undefined||rir>=1)){
-   const step=range.max>=30?5:1;const nextMin=range.min+step,nextMax=range.max+step;
-   return{type:"target",exerciseId:block.id,title:`Progress target — ${block.name}`,detail:`Every logged set reached the top of the current rep range with clean execution.`,from:block.target,to:`${nextMin}–${nextMax}`,reason:`Rep target ceiling reached across ${enoughSets} clean sets with sufficient RIR.`,status:"pending",sessionId:log.id};
- }
- if(emom.length>=Math.max(5,block.minutes||10)&&emom.every(v=>v>=range.max)&&emomStats(emom).drop<15){
-   return{type:"target",exerciseId:block.id,title:`Progress target — ${block.name}`,detail:`Every EMOM minute reached the top of the current range with stable output.`,from:block.target,to:`${range.min+1}–${range.max+1}`,reason:`EMOM ceiling reached with <15% drop-off.`,status:"pending",sessionId:log.id};
- }
- return null;
+ const criteria=criteriaForBlock(block);
+ const history=currentVariantLogs(block).filter(x=>x.date<=log.date);
+ const required=Math.max(2,criteria.consecutiveSessions||2);
+ const recent=history.slice(-required);
+ if(recent.length<required)return null;
+ const streak=progressionStreak(block,recent.map(coachingRecord),criteria);
+ if(streak<required)return null;
+ const range=parseTargetRange(block.target); if(!range)return null;
+ const r=log.result||{};
+ const step=block.kind==="EMOM"?1:(range.max>=30?5:1);
+ const nextMin=Number((range.min+step).toFixed(1));
+ const nextMax=Number((range.max+step).toFixed(1));
+ const suffix=block.kind==="SKILL_STATIC"?"s":"";
+ return {type:"target",exerciseId:block.id,title:`Progress target — ${block.name}`,detail:`The current target was achieved across ${required} consecutive qualifying exposures with complete coaching evidence.`,from:block.target,to:`${nextMin}–${nextMax}${suffix}`,reason:`${required} consecutive exposures qualified; no progression is based on a single session.`,status:"pending",sessionId:log.id};
 }
+
 function CoachProposalPanel({session}:{session:SessionSummary}){
  const [items,setItems]=useState<CoachProposal[]>(()=>getCoachProposals().filter(p=>p.sessionId===session.id));
  const [message,setMessage]=useState("");
