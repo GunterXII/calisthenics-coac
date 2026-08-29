@@ -1,6 +1,6 @@
 import type { ExerciseCatalogItem } from "./exercises";
 import type { ExerciseBlock, SessionSummary, WorkoutLog } from "./types";
-import {evaluateProgression,criteriaForBlock,progressionStreak,analyzeReadiness} from "./coachingEngine";
+import {evaluateProgression,criteriaForBlock,progressionStreak,analyzeReadiness,decideExposure} from "./coachingEngine";
 import {getProgressionSpec} from "./program";
 
 export type SkillDecision = "PROGRESS" | "HOLD" | "REGRESS" | "REVIEW" | "BUILDING";
@@ -100,18 +100,21 @@ export function analyzeSkillIntelligence(sessions:Session[], blocks:ExerciseBloc
     const recent=logs.slice(0,3).map(metric).filter(x=>x.value>0);
     const best=recent.length?Math.max(...recent.map(x=>x.value)):latestMetric.value;
     const exposures=logs.length;
-    const latestEval=evaluateProgression(block,coachingRecordForSkillLog(latest),criteriaForBlock(block));
+    const latestRecord=coachingRecordForSkillLog(latest);
+    const latestEval=evaluateProgression(block,latestRecord,criteriaForBlock(block));
+    const latestDecision=decideExposure(block,latestRecord,criteriaForBlock(block));
     const qstreak=progressionStreak(block,logs.slice(-Math.max(2,(criteriaForBlock(block).consecutiveSessions||2))).map(l=>coachingRecordForSkillLog(l)),criteriaForBlock(block));
     const readiness=analyzeReadiness(latest.__session?.readiness);
     const confidence=Math.min(100,Math.round(25 + exposures*12 + qstreak*20 + (latestEval.qualityKnown?10:0)));
     const dataQuality=exposures>=4?"HIGH":exposures>=2?"MEDIUM":"LOW";
     let decision:SkillDecision="BUILDING",level:SkillLevel="YELLOW",action="KEEP CURRENT",why="Collect more comparable exposures before changing the prescription.";
-    if(readiness.status==="PAIN_REVIEW"||readiness.gates.pain==="BLOCK"){ decision="REVIEW"; level="RED"; action="HOLD + REVIEW READINESS"; why="Readiness has a blocking pain gate; performance is not used as progression evidence."; }
-    else if(qstreak>=2 && latestEval.qualifies){ decision="PROGRESS"; level="GREEN"; action="COACH REVIEW → NEXT VARIANT"; why=`The central progression engine reports ${qstreak} consecutive qualifying exposures.`; }
+    if(readiness.status==="PAIN_REVIEW"||readiness.gates.pain==="BLOCK"){ decision=latestDecision.decision==="REGRESS"?"REGRESS":"REVIEW"; level="RED"; action="HOLD + REVIEW READINESS"; why="Readiness has a blocking pain gate; performance is not used as progression evidence."; }
+    else if(latestDecision.decision==="REDUCE_VOLUME"){ decision="BUILDING"; level="YELLOW"; action="REDUCE VOLUME / RECOVER"; why=latestDecision.reasons[0]||"Recovery signal is too high for progression."; }
+    else if(qstreak>=2 && latestEval.qualifies && latestDecision.decision==="PROGRESS"){ decision="PROGRESS"; level="GREEN"; action="COACH REVIEW → NEXT VARIANT"; why=`The central progression engine reports ${qstreak} consecutive comparable qualifying exposures.`; }
     else if(qstreak===1){ decision="HOLD"; level="YELLOW"; action="REPEAT STANDARD ONCE"; why="The central progression engine has one qualifying exposure; another comparable exposure is required."; }
     else if(!latestEval.qualityKnown && latestEval.reasons.some((r:string)=>r.includes("quality"))){ decision="HOLD"; level="YELLOW"; action="RECORD QUALITY / HOLD"; why="Execution quality is missing, so the Coach will not treat the exposure as clean evidence."; }
     else if(!readiness.allowProgression){ decision="BUILDING"; level="YELLOW"; action="KEEP CURRENT + BUILD QUALITY"; why="Readiness does not authorize progression yet."; }
-    else { decision="BUILDING"; level="YELLOW"; action="KEEP CURRENT + BUILD QUALITY"; why="Performance is still building toward the progression standard."; }
+    else { decision="BUILDING"; level="YELLOW"; action="KEEP CURRENT + BUILD QUALITY"; why=latestDecision.reasons[0]||"Performance is still building toward the progression standard."; }
 
     const next = progressionNext(catalogId, block.name);
     out.push({id:`skill-${catalogId}`,exerciseId:catalogId,name:block.name,skill,decision,level,confidence,exposures,qualifyingStreak:qstreak,latest:formatMetric(latestMetric.value,latestMetric.unit),best:best,unit:latestMetric.unit,action,why,next:decision==="PROGRESS"?next:undefined,regression:undefined,dataQuality});

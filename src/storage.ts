@@ -66,18 +66,40 @@ export function saveMobilitySession(s:MobilitySession){
 
 export function latestLog(day:DayKey,id:string,beforeDate?:number,variantId?:string){
   return getLogs()
-    .filter(x=>x.day===day&&x.exerciseId===id&&!x.skipped&&(x.status==="complete"||x.status==="modified")&&(beforeDate===undefined||x.date<beforeDate)&&(!variantId||exerciseExposureKeyString({exerciseId:x.exerciseId,variantId:x.variantId||x.exerciseId})===exerciseExposureKeyString({exerciseId:id,variantId})))
+    .filter(x=>x.day===day&&x.exerciseId===id&&!x.skipped&&x.status==="complete"&&(beforeDate===undefined||x.date<beforeDate)&&(!variantId||exerciseExposureKeyString({exerciseId:x.exerciseId,variantId:x.variantId||x.exerciseId})===exerciseExposureKeyString({exerciseId:id,variantId})))
     .sort((a,b)=>b.date-a.date)[0];
 }
 export function latestSession(day:DayKey){return getSessions().filter(x=>x.day===day).sort((a,b)=>b.date-a.date)[0]}
 
-export function getTarget(id:string,fallback?:number){
-  try{const x=JSON.parse(localStorage.getItem(TARGET_KEY)||"{}");return x[id]??fallback}catch{return fallback}
+interface TodayTargetState { value:number; updatedAt:number; min:number; max:number; }
+
+export function getTodayTarget(id:string,fallback:number,min=Number.NEGATIVE_INFINITY,max=Number.POSITIVE_INFINITY,programUpdatedAt=0){
+  try{
+    const raw=JSON.parse(localStorage.getItem(TARGET_KEY)||"{}");
+    const entry=raw?.[id];
+    if(entry && typeof entry==="object") {
+      const value=Number(entry.value);
+      const updatedAt=Number(entry.updatedAt)||0;
+      if(Number.isFinite(value) && updatedAt>=programUpdatedAt) return Math.max(min,Math.min(max,value));
+      return fallback;
+    }
+    // Backward compatibility for the old numeric target format. Legacy values are
+    // treated as older than any explicit program override.
+    if(typeof entry==="number" && programUpdatedAt<=0) return Math.max(min,Math.min(max,entry));
+    return fallback;
+  }catch{return fallback}
 }
-export function setTarget(id:string,value:number){
-  const x=JSON.parse(localStorage.getItem(TARGET_KEY)||"{}");x[id]=value;
+
+export function setTodayTarget(id:string,value:number,min=Number.NEGATIVE_INFINITY,max=Number.POSITIVE_INFINITY){
+  const x=JSON.parse(localStorage.getItem(TARGET_KEY)||"{}");
+  x[id]={value:Math.max(min,Math.min(max,value)),updatedAt:Date.now(),min,max};
   localStorage.setItem(TARGET_KEY,JSON.stringify(x));
 }
+
+// Legacy aliases kept for imported V8/V9 backups. New workout code should use
+// getTodayTarget/setTodayTarget so program overrides can supersede older values.
+export function getTarget(id:string,fallback?:number){return getTodayTarget(id,fallback??0)}
+export function setTarget(id:string,value:number){setTodayTarget(id,value)}
 
 export function getEmomDuration(id:string,fallback=10){
   try{const x=JSON.parse(localStorage.getItem(EMOM_DURATION_KEY)||"{}");const v=Number(x[id]);return Number.isFinite(v)&&v>0?v:fallback}catch{return fallback}
@@ -107,6 +129,15 @@ export function emomStats(v:number[]){
 
 function sum(v:number[]|undefined){return (v||[]).reduce((a,b)=>a+b,0)}
 
+function prescriptionText(p:import("./types").PrescriptionSnapshot|undefined){
+  if(!p)return null;
+  const target=p.todayTarget!==undefined?`${p.todayTarget}${p.kind==="EMOM"?"/min":""}`:p.targetRange;
+  const dose=p.kind==="EMOM"?`${p.minutes||10} min EMOM`:`${p.sets||"?"} sets`;
+  const rest=p.restSec>0?` · ${p.restSec}s rest`:"";
+  const band=p.defaultBand&&p.defaultBand!=="None"?` · default ${p.defaultBand}`:"";
+  return `${dose} · target ${target}${rest}${band}`;
+}
+
 export function makeSessionReport(s:SessionSummary){
   const lines=[
     `CALISTHENICS COACH — ${s.day}`,
@@ -125,6 +156,8 @@ export function makeSessionReport(s:SessionSummary){
     if(l.result.band&&l.result.band!=="None")r+=` | BAND ${l.result.band}`;
     if(l.result.rir!==undefined)r+=` | RIR ${l.result.rir}`;
     if(l.result.fatigue!==undefined)r+=` | FATIGUE ${l.result.fatigue}/5`;
+    const prescribed=prescriptionText(l.prescription);
+    if(prescribed)r+=` | PRESCRIBED ${prescribed}`;
     lines.push(`${l.exerciseName}: ${r}`);
   });
   if(s.sessionNote)lines.push("",`SESSION NOTE: ${s.sessionNote}`);
@@ -155,9 +188,11 @@ export function makeCoachHandoff(s:SessionSummary){
     }
     const currentLogIds=new Set(s.logs.map(x=>x.id));
     const prior=all
-      .filter(x=>x.exerciseId===l.exerciseId&&x.day===l.day&&!currentLogIds.has(x.id)&&!x.skipped&&(x.status==="complete"||x.status==="modified")&&x.date<l.date&&(!l.variantId||String(x.variantId||x.exerciseId)===String(l.variantId)))
+      .filter(x=>x.exerciseId===l.exerciseId&&x.day===l.day&&!currentLogIds.has(x.id)&&!x.skipped&&x.status==="complete"&&x.date<l.date&&(!l.variantId||String(x.variantId||x.exerciseId)===String(l.variantId)))
       .sort((a,b)=>b.date-a.date)[0];
     const suffix:string[]=[];
+    const prescribed=prescriptionText(l.prescription);
+    if(prescribed) suffix.push(`prescribed ${prescribed}`);
     if(l.kind==='EMOM'&&l.result.emom?.length){
       const cur=sum(l.result.emom),prev=prior?.result.emom?.length?sum(prior.result.emom):undefined;
       suffix.push(`EMOM ${l.result.emom.join('/')}`,`total ${cur}`);

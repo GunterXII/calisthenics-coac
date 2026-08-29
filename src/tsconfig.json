@@ -23,5 +23,6 @@
   "include": [
     "src"
   ],
-  "references": []
+  "references": [],
+  "exclude": ["src/src/**"]
 }

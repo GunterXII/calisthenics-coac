@@ -1,0 +1,13 @@
+
+> calisthenics-coach-v9@15.4.0 test:all
+> node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/domainHardening.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase3.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase6.integration.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/trainingModel.phase7.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/workloadEngine.phase8.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/programValidation.phase9.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase10.test.ts
+
+Coaching Engine tests: PASS
+Domain hardening tests: PASS
+Atomic proposal tests: PASS
+Phase 3 Coach Engine tests: PASS
+Phase 6 integration tests: PASS
+Phase 7 Training Model tests: PASS
+Phase 8 Workload & Recovery tests: PASS
+Phase 9 Program Validation tests: PASS
+Phase 10 Coach Engine tests: PASS

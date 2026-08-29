@@ -29,3 +29,30 @@ h1{font-size:clamp(38px,8vw,62px);line-height:.95;letter-spacing:-.065em;font-we
 .history-card span{font-size:9px;color:#777780}
 select{background:#151519;border:1px solid #303038;border-radius:10px;color:white;padding:.7rem .8rem;font-size:10px;outline:none;min-width:0}
 @media(max-width:700px){.history-row{grid-template-columns:64px 1fr 70px}}
+
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
+.nav-item-active{color:#b79cff;background:rgba(139,92,246,.08)}
+.nav-item:focus-visible{outline:2px solid rgba(183,156,255,.7);outline-offset:-2px}
+.workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
+.workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
+.workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
+.workout-context-progress-bar span{display:block;height:100%;border-radius:999px;background:#8b5cf6}
+@media(min-width:700px){.workout-context-progress-bar{width:120px}}
+
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
+.nav-item-active{color:#b79cff;background:rgba(139,92,246,.08)}
+.nav-item:focus-visible{outline:2px solid rgba(183,156,255,.7);outline-offset:-2px}
+.workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
+.workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
+.workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
+.workout-context-progress-bar span{display:block;height:100%;border-radius:999px;background:#8b5cf6}
+@media(min-width:700px){.workout-context-progress-bar{width:120px}}
+
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
+.nav-item-active{color:#b79cff;background:rgba(139,92,246,.08)}
+.nav-item:focus-visible{outline:2px solid rgba(183,156,255,.7);outline-offset:-2px}
+.workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
+.workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
+.workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
+.workout-context-progress-bar span{display:block;height:100%;border-radius:999px;background:#8b5cf6}
+@media(min-width:700px){.workout-context-progress-bar{width:120px}}

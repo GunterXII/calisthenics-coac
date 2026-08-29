@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test:coach": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/domainHardening.test.ts"
+    "test:coach": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/domainHardening.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase3.test.ts",
+    "test:phase6": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase6.integration.test.ts",
+    "test:phase7": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/trainingModel.phase7.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/workloadEngine.phase8.test.ts",
+    "test:phase8": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/workloadEngine.phase8.test.ts",
+    "test:all": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/domainHardening.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase3.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase6.integration.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/trainingModel.phase7.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/workloadEngine.phase8.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/programValidation.phase9.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase10.test.ts",
+    "test:phase9": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/programValidation.phase9.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase10.test.ts",
+    "test:phase10": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase10.test.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
