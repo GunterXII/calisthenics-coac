@@ -2,6 +2,7 @@ import type { GoalId, GoalState, SessionSummary, WorkoutLog, SidePerformance } f
 import { deriveGoalStatus } from './periodizationEngine';
 
 export type GoalMetric = 'reps' | 'seconds';
+export type GoalSignal = 'BUILD' | 'PROGRESSING' | 'PLATEAU' | 'REGRESSING' | 'REALIZED' | 'INSUFFICIENT_DATA';
 
 export interface GoalDefinition {
   id: GoalId;
@@ -43,6 +44,18 @@ export interface GoalPerformanceSnapshot {
   sidePerformance?: SidePerformance;
 }
 
+export interface GoalDecisionSignal {
+  goalId: GoalId;
+  signal: GoalSignal;
+  confidence: number;
+  priorityScore: number;
+  progressPct: number;
+  trendPct: number;
+  exposures: number;
+  evidenceWindow: number;
+  reasons: string[];
+}
+
 export const DEFAULT_GOAL_DEFINITIONS: readonly GoalDefinition[] = [
   { id: 'oap', label: 'OAP', target: 5, metric: 'reps', unit: 'reps', benchmarkExerciseIds: ['oap'], description: 'Best clean reps on the full One Arm Pull-up.' },
   { id: 'flpu', label: 'Front Lever Pull-up', target: 5, metric: 'reps', unit: 'reps', benchmarkExerciseIds: ['flpu'], description: 'Best clean reps on the full Front Lever Pull-up.' },
@@ -60,14 +73,7 @@ function cleanSeries(log:WorkoutLog, metric:GoalMetric):GoalEvidence[] {
   if (!values.length) return [];
   const quality = log.result.quality || [];
   return values
-    .map((value,index)=>({
-      date: log.date,
-      value: Number(value || 0),
-      qualityKnown: quality.length > 0,
-      clean: quality.length === 0 ? true : quality[index] !== 'Lost position',
-      exerciseId: log.exerciseId,
-      exerciseName: log.exerciseName,
-    }))
+    .map((value,index)=>({ date: log.date, value: Number(value || 0), qualityKnown: quality.length > 0, clean: quality.length === 0 ? true : quality[index] !== 'Lost position', exerciseId: log.exerciseId, exerciseName: log.exerciseName }))
     .filter(x=>Number.isFinite(x.value) && x.value > 0 && x.clean);
 }
 
@@ -76,9 +82,6 @@ function collectEvidence(goal:GoalDefinition, sessions:SessionSummary[]):GoalEvi
   for (const session of sessions) {
     for (const log of session.logs || []) {
       if (!goal.benchmarkExerciseIds.includes(log.exerciseId)) continue;
-      // OAP benchmark is bilateral. When the player records right/left sides,
-      // score the exposure by the weaker side so one strong arm cannot hide the
-      // limiting side. Legacy logs without side metadata keep their old behavior.
       if (goal.id === 'oap' && log.result.sides?.length && log.result.reps?.length) {
         const right:number[] = [], left:number[] = [];
         log.result.reps.forEach((value,index)=>{
@@ -112,7 +115,6 @@ function trendPct(values:GoalEvidence[]):number {
   return round(((newAvg-oldAvg)/oldAvg)*100,1);
 }
 
-
 function median(xs:number[]):number {
   if(!xs.length) return 0;
   const ys=xs.slice().sort((a,b)=>a-b);
@@ -134,8 +136,7 @@ function qualityAdjustedBest(values:GoalEvidence[]):number {
   return Math.max(...values.map(x=>x.value*(x.qualityKnown ? (x.clean ? 1 : 0.95) : 0.95)));
 }
 
-export 
-function sidePerformanceForOap(sessions:SessionSummary[]):SidePerformance|undefined {
+export function sidePerformanceForOap(sessions:SessionSummary[]):SidePerformance|undefined {
   const logs=sessions.flatMap(s=>s.logs||[]).filter(l=>l.exerciseId==='oap'&&l.status==='complete'&&l.result.sides?.length&&l.result.reps?.length);
   if(!logs.length) return undefined;
   let rightBest=0,leftBest=0,rightQualifying=0,leftQualifying=0;
@@ -175,48 +176,34 @@ export function analyzeGoal(id:GoalId, sessions:SessionSummary[], definitions:re
   else if (trend <= -8) interpretation = 'Recent benchmark performance is down; investigate fatigue, technique and recovery before adding difficulty.';
   else if (evidence.length >= 2) interpretation = 'Performance is broadly stable; build more high-quality evidence before forcing a change.';
 
-  return {
-    goal,
-    baseline: round(baseline, goal.metric === 'seconds' ? 1 : 0),
-    current: round(current, goal.metric === 'seconds' ? 1 : 0),
-    best: round(best, goal.metric === 'seconds' ? 1 : 0),
-    target: goal.target,
-    progressPct: round(progressPct,1),
-    trendPct: trend,
-    exposures: evidence.length,
-    qualityCoveragePct,
-    confidence,
-    status: goalState.status,
-    latestEvidence: evidence[evidence.length-1],
-    recentEvidence: evidence.slice(-6),
-    interpretation,
-    repeatableBest: round(repeatable, goal.metric === 'seconds' ? 1 : 0),
-    qualityAdjustedBest: round(qualityAdjusted, goal.metric === 'seconds' ? 1 : 0),
-    recentMedian: round(recentMedian, goal.metric === 'seconds' ? 1 : 0),
-    sidePerformance: goal.id==='oap' ? sidePerformanceForOap(sessions) : undefined,
-  };
+  return { goal, baseline: round(baseline, goal.metric === 'seconds' ? 1 : 0), current: round(current, goal.metric === 'seconds' ? 1 : 0), best: round(best, goal.metric === 'seconds' ? 1 : 0), target: goal.target, progressPct: round(progressPct,1), trendPct: trend, exposures: evidence.length, qualityCoveragePct, confidence, status: goalState.status, latestEvidence: evidence[evidence.length-1], recentEvidence: evidence.slice(-6), interpretation, repeatableBest: round(repeatable, goal.metric === 'seconds' ? 1 : 0), qualityAdjustedBest: round(qualityAdjusted, goal.metric === 'seconds' ? 1 : 0), recentMedian: round(recentMedian, goal.metric === 'seconds' ? 1 : 0), sidePerformance: goal.id==='oap' ? sidePerformanceForOap(sessions) : undefined };
 }
 
-export function analyzeAllGoals(sessions:SessionSummary[], definitions:readonly GoalDefinition[]=DEFAULT_GOAL_DEFINITIONS):GoalPerformanceSnapshot[] {
-  return definitions.map(goal=>analyzeGoal(goal.id, sessions, definitions));
-}
+export function analyzeAllGoals(sessions:SessionSummary[], definitions:readonly GoalDefinition[]=DEFAULT_GOAL_DEFINITIONS):GoalPerformanceSnapshot[] { return definitions.map(goal=>analyzeGoal(goal.id, sessions, definitions)); }
 
 export function goalStateFromAnalytics(snapshot:GoalPerformanceSnapshot):GoalState {
-  // Programming state should reflect repeatable, quality-adjusted capacity;
-  // 'best' remains a record for the dashboard.
   const repeatable = snapshot.repeatableBest || snapshot.best;
   const quality = snapshot.qualityAdjustedBest || repeatable;
   const programCurrent = snapshot.exposures >= 4 ? Math.min(repeatable, quality) : snapshot.best;
-  return deriveGoalStatus({
-    id: snapshot.goal.id,
-    baseline: snapshot.baseline,
-    current: programCurrent,
-    target: snapshot.target,
-    trend: snapshot.trendPct/100,
-    confidence: snapshot.confidence,
-    repeatable,
-    qualityAdjusted: quality,
-    recentMedian: snapshot.recentMedian,
-    status: snapshot.status,
-  });
+  return deriveGoalStatus({ id: snapshot.goal.id, baseline: snapshot.baseline, current: programCurrent, target: snapshot.target, trend: snapshot.trendPct/100, confidence: snapshot.confidence, repeatable, qualityAdjusted: quality, recentMedian: snapshot.recentMedian, status: snapshot.status });
 }
+
+/** Advisory signal for the Coach. It never changes the program or targets. */
+export function goalDecisionSignal(snapshot:GoalPerformanceSnapshot):GoalDecisionSignal {
+  const evidenceWindow=Math.min(6,snapshot.exposures);
+  const reasons:string[]=[];
+  let signal:GoalSignal='INSUFFICIENT_DATA';
+  if(snapshot.best>=snapshot.target){ signal='REALIZED'; reasons.push('Benchmark target has been reached.'); }
+  else if(snapshot.exposures<2){ signal='INSUFFICIENT_DATA'; reasons.push('At least two benchmark exposures are needed to interpret a trend.'); }
+  else if(snapshot.trendPct<=-8){ signal='REGRESSING'; reasons.push('Recent benchmark performance is declining.'); reasons.push('Investigate fatigue, recovery and technique before increasing difficulty.'); }
+  else if(snapshot.trendPct>=5){ signal='PROGRESSING'; reasons.push('Recent benchmark performance is improving.'); }
+  else if(snapshot.exposures>=4){ signal='PLATEAU'; reasons.push('Performance is stable across a meaningful evidence window.'); reasons.push('Do not force progression from stability alone.'); }
+  else { signal='BUILD'; reasons.push('Evidence is still developing; prioritize repeatable quality.'); }
+
+  const gapPct=snapshot.target>0 ? clamp((snapshot.target-Math.max(snapshot.repeatableBest,snapshot.qualityAdjustedBest))/snapshot.target,0,1) : 0;
+  const trendPressure=signal==='REGRESSING' ? 0.35 : signal==='PROGRESSING' ? 0.15 : signal==='PLATEAU' ? 0.10 : 0;
+  const priorityScore=round(clamp(gapPct*0.65 + trendPressure + (1-snapshot.confidence)*0.20,0,1),2);
+  return {goalId:snapshot.goal.id, signal, confidence:snapshot.confidence, priorityScore, progressPct:snapshot.progressPct, trendPct:snapshot.trendPct, exposures:snapshot.exposures, evidenceWindow, reasons};
+}
+
+export function prioritizeGoals(snapshots:GoalPerformanceSnapshot[]):GoalDecisionSignal[] { return snapshots.map(goalDecisionSignal).sort((a,b)=>b.priorityScore-a.priorityScore); }
