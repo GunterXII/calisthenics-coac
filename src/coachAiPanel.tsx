@@ -1,7 +1,8 @@
 import {useEffect,useMemo,useState} from 'react';
 import {MessageSquare, Send, Sparkles, RotateCcw} from 'lucide-react';
 import {getSessions, savePeriodizationReview, getPeriodizationReview, getCoachDecisions} from './storage';
-import {buildCoachContext, deterministicCoachBrief, type CoachContext} from './coachAdvisorEngine';
+import {deterministicCoachBrief, type CoachContext} from './coachAdvisorEngine';
+import {buildCoachUiState, coachInsightTone} from './coachUiIntegration';
 import {askCoach, type CoachMessage} from './coachAiGateway';
 import {buildCoachReview, type CoachReview} from './coachReviewEngine';
 import {phaseTypeFromId} from './periodizationEngine';
@@ -21,8 +22,10 @@ function saveMessages(v:CoachMessage[]){localStorage.setItem(KEY,JSON.stringify(
 
 export function CoachPanel(){
  const sessions=getSessions() as SessionSummary[];
- const context=useMemo(()=>buildCoachContext(sessions),[sessions.length, sessions[0]?.id]);
- const [messages,setMessages]=useState<CoachMessage[]>(loadMessages);
+ const messagesSeed=loadMessages();
+ const ui=useMemo(()=>buildCoachUiState(sessions,messagesSeed.length>0),[sessions.length,sessions[0]?.id,messagesSeed.length]);
+ const context=ui.context;
+ const [messages,setMessages]=useState<CoachMessage[]>(messagesSeed);
  const [text,setText]=useState('');
  const [busy,setBusy]=useState(false);
  const [review,setReview]=useState<CoachReview|null>(()=>buildCoachReview(sessions,context.phase));
@@ -56,7 +59,11 @@ export function CoachPanel(){
  const savedReview=Boolean(savedInitial);
  return <section className="mt-5 w-full min-w-0 overflow-hidden rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
    <div className="flex items-start justify-between gap-3"><div><div className="section-kicker flex items-center gap-2"><Sparkles size={13}/> {t('coachReview')}</div><h2 className="mt-2 text-2xl font-extrabold">{t('questionCoach')}</h2><p className="mt-1 max-w-2xl text-[10px] leading-5 text-zinc-500">Legge fase, obiettivi, ultime sessioni, recupero e volume. Il Coach non modifica il piano senza una decisione esplicita.</p></div><button className="mini-btn" title={t('clearChat')} onClick={reset}><RotateCcw size={14}/></button></div>
-   <div className="mt-4 rounded-xl border border-line bg-panel2 p-3"><div className="grid gap-2 sm:grid-cols-3"><div><span className="field-label">{t('phase')}</span><div className="mt-1 text-xs font-bold">{phaseLabel(context.phase.type)}</div></div><div><span className="field-label">{t('week')}</span><div className="mt-1 text-xs font-bold">{context.phase.week}/{context.phase.totalWeeks}</div></div><div><span className="field-label">{t('status')}</span><div className="mt-1 text-xs font-bold">{context.recoveryStatus==='FRESH'?'Fresco':context.recoveryStatus==='RECOVERING'?'In recupero':context.recoveryStatus==='FATIGUED'?'Affaticato':'Molto affaticato'}</div></div></div><div className="mt-3 text-[9px] leading-4 text-zinc-500">{deterministicCoachBrief(context)}</div></div>{recentCoachChanges().length>0&&<div className="mt-3 rounded-xl border border-line bg-panel p-3"><div className="field-label">COSA È CAMBIATO</div><div className="mt-2 space-y-2">{recentCoachChanges().slice(0,3).map(x=><div key={x.id} className="flex items-start justify-between gap-3 text-[9px]"><span className="text-zinc-400">{x.title}</span><span className="shrink-0 text-zinc-600">{new Date(x.date).toLocaleDateString('it-IT')}</span></div>)}</div></div>}
+   <div className={`mt-4 rounded-2xl border p-4 ${coachInsightTone(ui.primary.tone)}`}>
+     <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="section-kicker">PRIORITÀ DEL COACH</div><div className="mt-1 text-sm font-extrabold">{ui.headline}</div><p className="mt-2 text-[10px] leading-5 text-zinc-300">{ui.primary.body}</p></div><span className="tag shrink-0">{ui.primary.tone}</span></div>
+     {ui.secondary.length>0&&<div className="mt-3 grid gap-2 sm:grid-cols-2">{ui.secondary.map(x=><div key={x.id} className="rounded-xl border border-line bg-panel2 p-3"><div className="text-[9px] font-extrabold">{x.title}</div><div className="mt-1 text-[9px] leading-4 text-zinc-500">{x.body}</div></div>)}</div>}
+   </div>
+   <div className="mt-4 rounded-xl border border-line bg-panel2 p-3"><div className="grid gap-2 sm:grid-cols-3"><div><span className="field-label">{t('phase')}</span><div className="mt-1 text-xs font-bold">{phaseLabel(context.phase.type)}</div></div><div><span className="field-label">{t('week')}</span><div className="mt-1 text-xs font-bold">{context.phase.week}/{context.phase.totalWeeks}</div></div><div><span className="field-label">{t('status')}</span><div className="mt-1 text-xs font-bold">{ui.recoveryLabel}</div></div></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-panel"><div className="h-full rounded-full bg-lime-400" style={{width:`${Math.round(ui.phaseProgress*100)}%`}} /></div><div className="mt-2 text-[9px] leading-4 text-zinc-500">{deterministicCoachBrief(context)}</div></div>{recentCoachChanges().length>0&&<div className="mt-3 rounded-xl border border-line bg-panel p-3"><div className="field-label">COSA È CAMBIATO</div><div className="mt-2 space-y-2">{recentCoachChanges().slice(0,3).map(x=><div key={x.id} className="flex items-start justify-between gap-3 text-[9px]"><span className="text-zinc-400">{x.title}</span><span className="shrink-0 text-zinc-600">{new Date(x.date).toLocaleDateString('it-IT')}</span></div>)}</div></div>}
    <div className="mt-4 rounded-2xl border border-line bg-panel p-4">
      <div className="flex items-start justify-between gap-3"><div><div className="section-kicker">{t('coachReview')}</div><div className="mt-1 text-sm font-extrabold">{review?.headline||'Vuoi una revisione completa?'}</div><p className="mt-1 text-[10px] leading-5 text-zinc-500">Analizza l’ultima sessione e verifica anche se la fase corrente è ancora appropriata.</p></div><button className="secondary-cta" onClick={runReview} disabled={reviewing}>{reviewing?t('reviewing'):t('reviewLast')}</button></div>
      {(savedReview||review)&&<div className="mt-4 rounded-xl border border-violet-500/15 bg-violet-500/5 p-3">
