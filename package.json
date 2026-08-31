@@ -13,6 +13,7 @@
     "test:phase7": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/trainingModel.phase7.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase6.integration.test.ts",
     "test:phase7-ui": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachUiIntegration.phase7.test.ts",
     "test:phase8": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase8.goalHardening.test.ts",
+    "test:phase8-final": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachSafety.phase8.test.ts",
     "test:ai:v22": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachAi.v22.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachAi.v22.fallback.test.ts",
     "test:phase2": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/periodizationEngine.phase2.test.ts",
     "test:phase2-prescription": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/prescriptionEngine.phase2.test.ts",
@@ -22,19 +23,20 @@
     "test:phase6coach": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachAdvisor.phase6.test.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@supabase/supabase-js": "^2.57.4"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "4.7.0",
     "autoprefixer": "^10.4.20",
+    "esbuild": "^0.24.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "vite": "^6.0.7",
-    "esbuild": "^0.24.2"
+    "typescript": "^5.8.3",
+    "vite": "^6.0.7"
   }
 }
