@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { analyzeAllGoals, analyzeGoal, goalStateFromAnalytics } from '../src/goalAnalyticsEngine.ts';
+import { analyzeAllGoals, analyzeGoal, goalDecisionSignal, goalStateFromAnalytics, prioritizeGoals } from '../src/goalAnalyticsEngine.ts';
 import type { SessionSummary } from '../src/types.ts';
 
 const session=(id:string,date:number,logs:any[]):SessionSummary=>({id,date,day:'Friday',durationSec:1800,readiness:{},logs,totalReps:0,emomReps:0,bestSkillSeconds:0});
@@ -44,5 +44,17 @@ assert.equal(all.length,5);
 const state=goalStateFromAnalytics(pushups);
 assert.equal(state.id,'pushups');
 assert.ok(state.current===68);
+
+const pushSignal=goalDecisionSignal(pushups);
+assert.equal(pushSignal.signal,'PROGRESSING');
+assert.ok(pushSignal.priorityScore>=0 && pushSignal.priorityScore<=1);
+assert.equal(pushSignal.evidenceWindow,3);
+
+const insufficient=goalDecisionSignal(analyzeGoal('front_lever_touch',sessions));
+assert.equal(insufficient.signal,'BUILD');
+
+const prioritized=prioritizeGoals(all);
+assert.equal(prioritized.length,5);
+assert.ok(prioritized.every((x,i)=>i===0 || prioritized[i-1].priorityScore>=x.priorityScore));
 
 console.log('Phase 5 Goal Analytics tests: PASS');
