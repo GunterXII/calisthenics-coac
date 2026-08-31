@@ -11,6 +11,7 @@
     "test:phase6": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase6.integration.test.ts",
     "test:phase6-contract": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachAdvisor.phase6.contract.test.ts",
     "test:phase7": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/trainingModel.phase7.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase6.integration.test.ts",
+    "test:phase7-ui": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachUiIntegration.phase7.test.ts",
     "test:phase8": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase8.goalHardening.test.ts",
     "test:ai:v22": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachAi.v22.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachAi.v22.fallback.test.ts",
     "test:phase2": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/periodizationEngine.phase2.test.ts",
