@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { analyzeGoal, goalStateFromAnalytics } from '../src/goalAnalyticsEngine.ts';
+import type { SessionSummary } from '../src/types.ts';
+const mk=(i:number,reps:number):SessionSummary=>({id:`s${i}`,date:i,day:'Friday',durationSec:1200,readiness:{},totalReps:reps,emomReps:0,bestSkillSeconds:0,logs:[{id:`l${i}`,sessionId:`s${i}`,date:i,day:'Friday',exerciseId:'pushup-long',exerciseName:'Push-up Long Set',kind:'PERFORMANCE',status:'complete',result:{reps:[reps],quality:['Clean']}}]});
+const sparse=[mk(1,40),mk(2,50),mk(3,70)];
+const snap=analyzeGoal('pushups',sparse);
+assert.equal(snap.best,70);
+assert.equal(goalStateFromAnalytics(snap).current,70);
+const dense=[...sparse,mk(4,60),mk(5,65)];
+const snap2=analyzeGoal('pushups',dense);
+assert.ok(goalStateFromAnalytics(snap2).current < snap2.best);
+console.log('Phase 10 goal-state tests: PASS');

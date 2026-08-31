@@ -1,7 +1,7 @@
 
 import {exerciseExposureKeyString} from "./types";
-import type {DayKey, MobilitySession, SessionSummary, WorkoutLog, ProgramOverride, CoachDecision, CoachProposal, CurrentVariantState, ExerciseExposureKey} from "./types";
-export type {ProgramOverride, CoachDecision, CoachProposal, CurrentVariantState} from "./types";
+import type {DayKey, MobilitySession, SessionSummary, WorkoutLog, ProgramOverride, CoachDecision, CoachProposal, CoachExperiment, CurrentVariantState, ExerciseExposureKey} from "./types";
+export type {ProgramOverride, CoachDecision, CoachProposal, CoachExperiment, CurrentVariantState} from "./types";
 
 const LOG_KEY="cc-v8-logs";
 const SESSION_KEY="cc-v8-sessions";
@@ -253,7 +253,10 @@ export function exportBackup(){
     programOverrides:getProgramOverrides(),
     coachDecisions:getCoachDecisions(),
     coachProposals:getCoachProposals(),
-    mobilitySessions:getMobilitySessions()
+    coachExperiments:getCoachExperiments(),
+    mobilitySessions:getMobilitySessions(),
+    periodizationStart:getPeriodizationCycleStart(),
+    periodizationReview:getPeriodizationReview()
   },null,2);
 }
 
@@ -261,7 +264,7 @@ export function normalizeBackupData(data:unknown){
   if(!data||typeof data!=="object")throw new Error("Invalid backup");
   const x=data as Record<string,unknown>;
   const schema=Number(x.schemaVersion);
-  if(![8,9,10].includes(schema))throw new Error("Unsupported backup version");
+  if(![8,9,10,11].includes(schema))throw new Error("Unsupported backup version");
   if(!Array.isArray(x.logs)||!Array.isArray(x.sessions))throw new Error("Invalid backup");
   const sessions=(x.sessions as SessionSummary[]).map(s=>({...s,logs:(s.logs||[]).map(l=>normalizeLog(l as Omit<WorkoutLog,"sessionId"> & Partial<Pick<WorkoutLog,"sessionId">>))}));
   const sessionIds=new Set(sessions.map(s=>s.id));
@@ -272,13 +275,17 @@ export function normalizeBackupData(data:unknown){
     targets:(x.targets&&typeof x.targets==="object"?x.targets:{}),
     settings:(x.settings&&typeof x.settings==="object"?x.settings:{}),
     variants:x.variants||{}, programOverrides:x.programOverrides||{},
-    coachDecisions:x.coachDecisions||[], coachProposals:x.coachProposals||[],
+    coachDecisions:Array.isArray(x.coachDecisions)?x.coachDecisions:[],
+    coachProposals:Array.isArray(x.coachProposals)?x.coachProposals:[],
+    coachExperiments:Array.isArray(x.coachExperiments)?x.coachExperiments:[],
+    periodizationStart:Number(x.periodizationStart)||undefined,
+    periodizationReview:x.periodizationReview&&typeof x.periodizationReview==='object'?x.periodizationReview:null,
     mobilitySessions:Array.isArray(x.mobilitySessions)?x.mobilitySessions:[],
   };
 }
 
 export function importBackup(text:string){
-  const data=normalizeBackupData(JSON.parse(text));
+  const data=normalizeBackupData(JSON.parse(text)) as ReturnType<typeof normalizeBackupData> & {coachExperiments?:unknown[];periodizationStart?:number;periodizationReview?:unknown};
   localStorage.setItem(LOG_KEY,JSON.stringify(data.logs));
   localStorage.setItem(SESSION_KEY,JSON.stringify(data.sessions));
   localStorage.setItem(TARGET_KEY,JSON.stringify(data.targets||{}));
@@ -287,7 +294,10 @@ export function importBackup(text:string){
   localStorage.setItem(PROGRAM_OVERRIDE_KEY,JSON.stringify(data.programOverrides||{}));
   localStorage.setItem(COACH_DECISION_KEY,JSON.stringify(data.coachDecisions||[]));
   localStorage.setItem(COACH_PROPOSAL_KEY,JSON.stringify(data.coachProposals||[]));
+  localStorage.setItem(COACH_EXPERIMENT_KEY,JSON.stringify(data.coachExperiments||[]));
   localStorage.setItem(MOBILITY_KEY,JSON.stringify(data.mobilitySessions||[]));
+  if(data.periodizationStart) localStorage.setItem(PERIODIZATION_START_KEY,String(Number(data.periodizationStart)));
+  if(data.periodizationReview) localStorage.setItem(PERIODIZATION_REVIEW_KEY,JSON.stringify(data.periodizationReview));
 }
 
 export function currentWeekBucket(date=Date.now()){
@@ -326,7 +336,13 @@ export function clearVariant(id:string){
 const COACH_PROPOSAL_KEY="cc-v15-coach-proposals";
 export function getCoachProposals():CoachProposal[]{try{return JSON.parse(localStorage.getItem(COACH_PROPOSAL_KEY)||"[]")}catch{return[]}}
 export function saveCoachProposal(p:Omit<CoachProposal,"id"|"date">){const next:CoachProposal={...p,id:crypto.randomUUID(),date:Date.now()};localStorage.setItem(COACH_PROPOSAL_KEY,JSON.stringify([...getCoachProposals(),next].slice(-100)));return next}
-export function updateCoachProposal(id:string,status:CoachProposal["status"]){const next=getCoachProposals().map(p=>p.id===id?{...p,status}:p);localStorage.setItem(COACH_PROPOSAL_KEY,JSON.stringify(next));return next.find(p=>p.id===id)}
+
+const COACH_EXPERIMENT_KEY="cc-v17-coach-experiments";
+export function getCoachExperiments():CoachExperiment[]{try{const x=JSON.parse(localStorage.getItem(COACH_EXPERIMENT_KEY)||"[]");return Array.isArray(x)?x:[]}catch{return[]}}
+export function saveCoachExperiment(e:Omit<CoachExperiment,"id"|"createdAt">){const next:CoachExperiment={...e,id:crypto.randomUUID(),createdAt:Date.now()};localStorage.setItem(COACH_EXPERIMENT_KEY,JSON.stringify([...getCoachExperiments(),next].slice(-100)));return next}
+export function updateCoachExperiment(id:string,patch:Partial<Omit<CoachExperiment,"id"|"createdAt">>){const next=getCoachExperiments().map(e=>e.id===id?{...e,...patch}:e);localStorage.setItem(COACH_EXPERIMENT_KEY,JSON.stringify(next));return next.find(e=>e.id===id)}
+export function clearCoachExperiments(){localStorage.removeItem(COACH_EXPERIMENT_KEY)}
+export function updateCoachProposal(id:string,status:CoachProposal["status"],patch?:Partial<Pick<CoachProposal,"experimentId"|"warnings"|"evidence">>){const next=getCoachProposals().map(p=>p.id===id?{...p,status,...(patch||{})}:p);localStorage.setItem(COACH_PROPOSAL_KEY,JSON.stringify(next));return next.find(p=>p.id===id)}
 export function acceptCoachProposalAtomically(
   proposalId:string,
   override:ProgramOverride,
@@ -391,3 +407,28 @@ export function mergeProgramLayer(incomingOverrides:Record<string,ProgramOverrid
 export function getDraft(){try{return JSON.parse(localStorage.getItem(DRAFT_KEY)||"null")}catch{return null}}
 export function saveDraft(d:import("./types").WorkoutDraft){localStorage.setItem(DRAFT_KEY,JSON.stringify({...d,updatedAt:Date.now()}))}
 export function clearDraft(){localStorage.removeItem(DRAFT_KEY)}
+
+const PERIODIZATION_START_KEY="cc-v16-periodization-start";
+export function getPeriodizationCycleStart():number{
+  try{
+    const raw=Number(localStorage.getItem(PERIODIZATION_START_KEY)||0);
+    if(Number.isFinite(raw)&&raw>0)return raw;
+  }catch{}
+  const now=Date.now();
+  const day=Math.floor(now/86400000);
+  const mondayOffset=(new Date(day*86400000).getUTCDay()+6)%7;
+  const monday=(day-mondayOffset)*86400000;
+  try{localStorage.setItem(PERIODIZATION_START_KEY,String(monday))}catch{}
+  return monday;
+}
+export function setPeriodizationCycleStart(timestamp:number){
+  const safe=Math.max(0,Math.floor(timestamp));
+  localStorage.setItem(PERIODIZATION_START_KEY,String(safe));
+}
+export function resetPeriodizationCycleStart(){localStorage.removeItem(PERIODIZATION_START_KEY)}
+
+const PERIODIZATION_REVIEW_KEY="cc-v17-periodization-review";
+export interface PeriodizationReviewState { reviewId:string; action:string; phaseId:string; nextPhaseId?:string; reason:string; confidence:number; reviewedAt:number; activeFrom?:number; activeUntil?:number; }
+export function getPeriodizationReview():PeriodizationReviewState|null{try{const x=JSON.parse(localStorage.getItem(PERIODIZATION_REVIEW_KEY)||"null");return x&&typeof x==='object'?x:null}catch{return null}}
+export function savePeriodizationReview(value:Omit<PeriodizationReviewState,'reviewedAt'>){const next={...value,reviewedAt:Date.now()};localStorage.setItem(PERIODIZATION_REVIEW_KEY,JSON.stringify(next));return next}
+export function clearPeriodizationReview(){localStorage.removeItem(PERIODIZATION_REVIEW_KEY)}

@@ -1,4 +1,4 @@
-import type {ExerciseBlock, TrainingPriority, TrainingRole, ProgressionMode, MuscleGroup} from "./types";
+import type {ExerciseBlock, TrainingPriority, TrainingRole, ProgressionMode, MuscleGroup, StimulusProfile} from "./types";
 
 export interface TrainingProfile {
   role: TrainingRole;
@@ -9,8 +9,38 @@ export interface TrainingProfile {
   /** Heuristic workload weight for internal planning only; not an anatomical "effective set" claim. */
   effectiveSetWeight: number;
   gripDemand: "none" | "low" | "moderate" | "high";
+  /** Separate adaptation model: stimulus is not the same thing as workload/fatigue. */
+  stimulus: StimulusProfile;
   notes?: string;
 }
+
+const STIMULUS_DEFAULTS: Record<TrainingRole, Omit<StimulusProfile, "fatigue">> = {
+  skill: {skill:1, strength:0.45, hypertrophy:0.25, endurance:0.05, power:0.1},
+  strength: {skill:0.2, strength:0.9, hypertrophy:0.6, endurance:0.15, power:0.2},
+  hypertrophy: {skill:0.05, strength:0.35, hypertrophy:0.95, endurance:0.35, power:0.05},
+  endurance: {skill:0.05, strength:0.2, hypertrophy:0.55, endurance:1, power:0.05},
+  power: {skill:0.45, strength:0.7, hypertrophy:0.2, endurance:0.1, power:1},
+  mobility: {skill:0.25, strength:0.05, hypertrophy:0, endurance:0.1, power:0},
+};
+
+const STIMULUS_OVERRIDES: Record<string, Partial<StimulusProfile>> = {
+  oap: {skill:1, strength:0.95, hypertrophy:0.25, endurance:0.05, power:0.1},
+  "oap-band": {skill:0.8, strength:0.9, hypertrophy:0.65, endurance:0.1, power:0.1},
+  flpu: {skill:1, strength:0.95, hypertrophy:0.3, endurance:0.08, power:0.1},
+  "flpu-band": {skill:0.82, strength:0.9, hypertrophy:0.65, endurance:0.1, power:0.1},
+  touch: {skill:1, strength:0.65, hypertrophy:0.18, endurance:0.05, power:0.05},
+  "touch-band": {skill:0.88, strength:0.6, hypertrophy:0.35, endurance:0.1, power:0.05},
+  "high-pull": {skill:0.25, strength:0.9, hypertrophy:0.65, endurance:0.12, power:0.65},
+  pullup: {skill:0.08, strength:0.4, hypertrophy:0.9, endurance:0.75, power:0.05},
+  "close-chin": {skill:0.05, strength:0.4, hypertrophy:0.9, endurance:0.8, power:0.05},
+  "close-pull": {skill:0.05, strength:0.4, hypertrophy:0.9, endurance:0.8, power:0.05},
+  "pushup-emom-b": {skill:0.03, strength:0.25, hypertrophy:0.55, endurance:0.95, power:0.02},
+  "pushup-emom-c": {skill:0.03, strength:0.25, hypertrophy:0.55, endurance:0.95, power:0.02},
+  "dips-emom-b": {skill:0.03, strength:0.35, hypertrophy:0.6, endurance:0.95, power:0.02},
+  "dips-emom-c": {skill:0.03, strength:0.35, hypertrophy:0.6, endurance:0.95, power:0.02},
+  "pushup-long": {skill:0.03, strength:0.3, hypertrophy:0.6, endurance:0.95, power:0.02},
+  "dips-long": {skill:0.03, strength:0.4, hypertrophy:0.65, endurance:0.95, power:0.02},
+};
 
 const PROFILE: Record<string, Partial<TrainingProfile>> = {
   // Push strength / skill
@@ -75,24 +105,129 @@ function defaultProfile(block: ExerciseBlock): TrainingProfile {
     : role === "strength" ? "strength_reps"
     : "none";
   const muscleGroups: MuscleGroup[] = block.kind === "CORE" ? ["core"] : [];
+  const fatigueCost = block.kind === "EMOM" ? 4 : block.kind === "SKILL_REPS" ? 4 : 2;
+  const baseStimulus = STIMULUS_DEFAULTS[role];
   return {
     role,
     priority,
     progressionMode,
-    fatigueCost: block.kind === "EMOM" ? 4 : block.kind === "SKILL_REPS" ? 4 : 2,
+    fatigueCost,
     muscleGroups,
     effectiveSetWeight: role === "hypertrophy" ? 1 : role === "strength" ? 0.8 : role === "skill" ? 0.35 : role === "power" ? 0.35 : 0,
     gripDemand: block.name.toLowerCase().includes("pull") || block.name.toLowerCase().includes("chin") || block.name.toLowerCase().includes("hang") ? "high" : "none",
+    stimulus: { ...baseStimulus, fatigue: fatigueCost / 5 },
   };
 }
 
 export function trainingProfileForBlock(block: ExerciseBlock): TrainingProfile {
   const p = PROFILE[block.id];
+  const base = defaultProfile(block);
+  const role = p?.role || base.role;
+  const roleStimulus = STIMULUS_DEFAULTS[role];
+  const stimulus = {
+    ...base.stimulus,
+    ...roleStimulus,
+    ...(STIMULUS_OVERRIDES[block.id] || {}),
+    fatigue: (p?.fatigueCost ?? base.fatigueCost) / 5,
+  };
   return {
-    ...defaultProfile(block),
+    ...base,
     ...p,
-    muscleGroups: p?.muscleGroups || defaultProfile(block).muscleGroups,
+    muscleGroups: p?.muscleGroups || base.muscleGroups,
+    stimulus,
   } as TrainingProfile;
+}
+
+export interface StimulusSummary {
+  skill: number;
+  strength: number;
+  hypertrophy: number;
+  endurance: number;
+  power: number;
+  fatigue: number;
+  muscles: Partial<Record<MuscleGroup, number>>;
+}
+
+/**
+ * Returns a normalized profile for planning. The returned stimulus values are
+ * heuristics for internal program design; they are not physiological measurements.
+ */
+export function normalizedTrainingProfile(block: ExerciseBlock): TrainingProfile {
+  const profile = trainingProfileForBlock(block);
+  const clamp01 = (n:number) => Math.max(0, Math.min(1, n));
+  return {
+    ...profile,
+    effectiveSetWeight: clamp01(profile.effectiveSetWeight),
+    stimulus: {
+      skill: clamp01(profile.stimulus.skill),
+      strength: clamp01(profile.stimulus.strength),
+      hypertrophy: clamp01(profile.stimulus.hypertrophy),
+      endurance: clamp01(profile.stimulus.endurance),
+      power: clamp01(profile.stimulus.power),
+      fatigue: Math.max(0, Math.min(5, profile.stimulus.fatigue)),
+    },
+  };
+}
+
+export function summarizeStimulus(blocks: ExerciseBlock[], completedSetsByBlock: Record<string, number> = {}): StimulusSummary {
+  const out: StimulusSummary = {skill:0, strength:0, hypertrophy:0, endurance:0, power:0, fatigue:0, muscles:{}};
+  for (const block of blocks) {
+    const profile = normalizedTrainingProfile(block);
+    const sets = Math.max(1, completedSetsByBlock[block.id] ?? block.sets ?? 1);
+    out.skill += profile.stimulus.skill * sets;
+    out.strength += profile.stimulus.strength * sets;
+    out.hypertrophy += profile.stimulus.hypertrophy * sets;
+    out.endurance += profile.stimulus.endurance * sets;
+    out.power += profile.stimulus.power * sets;
+    out.fatigue += profile.stimulus.fatigue * sets;
+    for (const muscle of profile.muscleGroups) out.muscles[muscle] = (out.muscles[muscle] || 0) + profile.stimulus.hypertrophy * sets;
+  }
+  return out;
+}
+
+export function stimulusProfileForBlock(block: ExerciseBlock): StimulusProfile {
+  return trainingProfileForBlock(block).stimulus;
+}
+
+export function sessionStimulusByAdaptation(blocks: ExerciseBlock[], performedSetCounts?: Record<string, number>) {
+  const totals: Record<keyof StimulusProfile, number> = {
+    skill:0,
+    strength:0,
+    hypertrophy:0,
+    endurance:0,
+    power:0,
+    fatigue:0,
+  };
+  for (const block of blocks) {
+    const profile = trainingProfileForBlock(block);
+    const sets = performedSetCounts?.[block.id];
+    const workloadSets = effectiveWorkloadSets(block, sets);
+    for (const key of Object.keys(totals) as (keyof StimulusProfile)[]) {
+      totals[key] += workloadSets * profile.stimulus[key];
+    }
+  }
+  return Object.fromEntries(Object.entries(totals).map(([k,v]) => [k, Number(v.toFixed(2))])) as Record<keyof StimulusProfile, number>;
+}
+
+export function sessionStimulusByMuscleAndAdaptation(blocks: ExerciseBlock[], performedSetCounts?: Record<string, number>) {
+  const totals: Partial<Record<MuscleGroup, Record<"hypertrophy"|"strength"|"skill"|"endurance"|"power", number>>> = {};
+  for (const block of blocks) {
+    const profile = trainingProfileForBlock(block);
+    const workloadSets = effectiveWorkloadSets(block, performedSetCounts?.[block.id]);
+    for (const muscle of profile.muscleGroups) {
+      const bucket = totals[muscle] || (totals[muscle] = {skill:0, strength:0, hypertrophy:0, endurance:0, power:0});
+      bucket.skill += workloadSets * profile.stimulus.skill;
+      bucket.strength += workloadSets * profile.stimulus.strength;
+      bucket.hypertrophy += workloadSets * profile.stimulus.hypertrophy;
+      bucket.endurance += workloadSets * profile.stimulus.endurance;
+      bucket.power += workloadSets * profile.stimulus.power;
+    }
+  }
+  for (const muscle of Object.keys(totals) as MuscleGroup[]) {
+    const bucket = totals[muscle]!;
+    for (const key of Object.keys(bucket) as Array<keyof typeof bucket>) bucket[key] = Number(bucket[key].toFixed(2));
+  }
+  return totals;
 }
 
 export function effectiveWorkloadSets(block: ExerciseBlock, performedSetCount?: number): number {

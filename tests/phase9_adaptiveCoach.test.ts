@@ -1,0 +1,18 @@
+import { strict as assert } from 'node:assert';
+import { defaultPeriodizationCycle, phaseForCycleWeek, phasePlanFor } from '../src/periodizationEngine.ts';
+import { buildCoachReview } from '../src/coachReviewEngine.ts';
+import type { SessionSummary } from '../src/types.ts';
+const c=defaultPeriodizationCycle();
+assert.equal(phaseForCycleWeek(c,4).type,'DELOAD');
+assert.equal(phaseForCycleWeek(c,5).type,'OAP_EMPHASIS');
+assert.equal(phaseForCycleWeek(c,8).type,'DELOAD');
+assert.equal(phaseForCycleWeek(c,9).type,'FL_EMPHASIS');
+assert.equal(phaseForCycleWeek(c,12).type,'DELOAD');
+assert.equal(phaseForCycleWeek(c,13).type,'ENDURANCE_EMPHASIS');
+assert.equal(phaseForCycleWeek(c,16).type,'REALIZATION');
+const now=Date.now();
+const s:SessionSummary={id:'s1',date:now-3600000,day:'Friday',durationSec:1800,readiness:{},logs:[{id:'l1',sessionId:'s1',date:now-3600000,day:'Friday',exerciseId:'oap',exerciseName:'OAP',kind:'SKILL_REPS',status:'complete',result:{reps:[1],quality:['Clean'],rir:2,fatigue:2}}],totalReps:1,emomReps:0,bestSkillSeconds:0};
+const review=buildCoachReview([s],phasePlanFor('OAP_EMPHASIS',2));
+assert.equal(review.phase.type,'OAP_EMPHASIS');
+assert.ok(review.recommendations.length>0);
+console.log('Phase 9 adaptive coach review tests: PASS');

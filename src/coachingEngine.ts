@@ -261,10 +261,30 @@ export function referenceWeightFromLogs(logs:CoachingLogRecord[]){
   const weights=logs.map(x=>x.session?.readiness?.weightKg).filter((x):x is number=>typeof x==="number"&&x>0);return weights.length?weights[weights.length-1]:undefined;
 }
 
+export function masteryCriteriaForBlock(block: ExerciseBlock): ProgressionCriteria {
+  const sets = Math.max(1, Math.min(block.sets || 3, 5));
+  const target = parseTargetRange(block.target);
+  if (block.id === "oap") return { type:"reps", minSets:Math.min(3, sets), minReps:2, minRir:1, requireClean:false, consecutiveSessions:3, side:"both", minQualifyingRepsPerSide:2 };
+  if (block.id === "flpu") return { type:"reps", minSets:Math.min(3, sets), minReps:Math.max(1, target.max-1), minRir:1, requireClean:true, consecutiveSessions:3 };
+  if (block.id === "touch" || block.id === "front-lever-touch") return { type:"seconds", minHolds:Math.min(3, sets), minSeconds:Math.min(8, target.max || 4), minRir:1, requireClean:true, consecutiveSessions:3 };
+  if (block.kind === "EMOM") return { type:"emom", minutes:Math.max(1, Math.min(block.minutes || 10, 15)), minPerMinute:Math.max(1, target?.min || 1), maxDropoffPct:15, maxCvPct:20, minLastVsFirstPct:85, consecutiveSessions:3 };
+  if (block.progressionMode === "hypertrophy_reps") return { type:"reps", minSets:Math.min(3, sets), minReps:Math.max(1, target?.max || 1), minRir:1, requireClean:false, consecutiveSessions:2 };
+  return criteriaForBlock(block);
+}
+
+export function progressionGateForBlock(block: ExerciseBlock) {
+  return {
+    training: criteriaForBlock(block),
+    mastery: masteryCriteriaForBlock(block),
+    consecutiveExposures: masteryCriteriaForBlock(block).consecutiveSessions || 2,
+    reason: block.trainingRole === "skill" ? "Skill promotion requires repeated clean exposures; one good session is not enough." : "Use repeated comparable exposures before changing the dose."
+  };
+}
+
 export function criteriaForBlock(block:ExerciseBlock):ProgressionCriteria{
   const target=parseTargetRange(block.target);const sets=Math.max(1,block.sets||3);const upper=target.max>0?target.max:1;
   if(block.id==="touch"||block.id==="front-lever-touch")return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
-  if(block.id==="oap")return {type:"reps",minSets:sets,minReps:2,minRir:2,requireClean:false,consecutiveSessions:2,side:"both",minQualifyingRepsPerSide:2};
+  if(block.id==="oap")return {type:"reps",minSets:Math.min(3,sets),minReps:2,minRir:2,requireClean:false,consecutiveSessions:2,side:"both",minQualifyingRepsPerSide:2};
   if(block.kind==="SKILL_STATIC")return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
   if(block.kind==="EMOM"){
     const minPerMinute=Math.max(1,Math.floor(target.min||upper));

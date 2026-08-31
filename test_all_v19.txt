@@ -1,0 +1,105 @@
+
+> calisthenics-coach-v9@18.0.0 test:all
+> node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/goalAnalytics.phase5.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/domainHardening.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase3.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase6.integration.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/trainingModel.phase7.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase7.athleteUx.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/workloadEngine.phase8.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/programValidation.phase9.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachingEngine.phase10.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/programBuilder.phase3.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/adaptiveProgramEngine.phase4.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachAdvisor.phase6.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase8.goalHardening.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase9_adaptiveCoach.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachLoop.phase9.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/adaptiveStimulus.phase10.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase10.goalState.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachTools.phase18.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachProposal.phase19.test.ts
+
+(node:27024) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27024) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 5 Goal Analytics tests: PASS
+(node:27040) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27040) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Coaching Engine tests: PASS
+(node:27057) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27057) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Domain hardening tests: PASS
+Atomic proposal tests: PASS
+(node:27078) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27078) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 3 Coach Engine tests: PASS
+(node:27097) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27097) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 6 integration tests: PASS
+(node:27113) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27113) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 7 Training Model tests: PASS
+(node:27132) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27132) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 7 Athlete UX + Gate tests: PASS
+(node:27151) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27151) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 8 Workload & Recovery tests: PASS
+(node:27165) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27165) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 9 Program Validation tests: PASS
+(node:27186) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27186) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 10 Coach Engine tests: PASS
+(node:27202) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27202) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 3 Program Builder tests: PASS
+(node:27221) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27221) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 4 Adaptive Program tests: PASS
+(node:27240) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27240) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 6 Coach Advisor tests: PASS
+(node:27261) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27261) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 8 Goal Hardening tests: PASS
+(node:27280) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27280) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 9 adaptive coach review tests: PASS
+(node:27295) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27295) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 9 Coach Loop tests: PASS
+(node:27315) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27315) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 10 adaptive stimulus tests: PASS
+(node:27334) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27334) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 10 goal-state tests: PASS
+(node:27348) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27348) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 18 Coach Tools: PASS
+(node:27369) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./tests/ts-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27369) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Phase 19 Coach Proposal Engine: PASS

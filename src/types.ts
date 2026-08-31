@@ -6,6 +6,13 @@ export type BlockStatus = "complete"|"modified"|"incomplete"|"skipped";
 export type TrainingRole = "skill"|"strength"|"hypertrophy"|"endurance"|"power"|"mobility";
 export type BandMode = "assistance"|"resistance"|"none";
 export type TrainingPriority = "primary"|"secondary"|"support";
+export type TrainingAdaptation = "skill"|"strength"|"hypertrophy"|"endurance"|"power";
+export type RirRating = 0|1|2|3;
+export type PerceivedFatigueRating = 1|2|3|4|5;
+export type PhaseType = "ACCUMULATION"|"OAP_EMPHASIS"|"FL_EMPHASIS"|"ENDURANCE_EMPHASIS"|"REALIZATION"|"DELOAD";
+export type GoalId = "oap"|"flpu"|"front_lever_touch"|"pushups"|"dips";
+export type ProposalStatus = "pending"|"accepted"|"rejected"|"expired";
+export type ExperimentOutcome = "SUPPORTED"|"INCONCLUSIVE"|"FAILED";
 export type ProgressionMode = "skill_quality"|"strength_reps"|"hypertrophy_reps"|"density_emom"|"power_quality"|"static_hold"|"endurance"|"none";
 export type MuscleGroup = "chest"|"triceps"|"front_delts"|"side_delts"|"lats"|"upper_back"|"biceps"|"forearms"|"core"|"quads"|"glutes"|"hamstrings"|"calves";
 
@@ -25,12 +32,85 @@ export interface VariantMasteryCriteria {
   criteria:ProgressionCriteria;
   nextVariantId:string;
 }
+export interface ProgressionGate {
+  training: ProgressionCriteria;
+  mastery?: ProgressionCriteria;
+  consecutiveExposures: number;
+  reason: string;
+}
+export interface GoalState {
+  id:GoalId;
+  baseline:number;
+  current:number;
+  target:number;
+  trend:number;
+  confidence:number;
+  repeatable?:number;
+  qualityAdjusted?:number;
+  recentMedian?:number;
+  status:"BUILDING"|"PROGRESSING"|"STALLED"|"REGRESSING"|"REALIZING";
+}
+
+export interface PhaseAdaptationWeights {
+  skill:number;
+  strength:number;
+  hypertrophy:number;
+  endurance:number;
+  power?:number;
+}
+
+export interface PhasePlan {
+  id:string;
+  type:PhaseType;
+  week:number;
+  totalWeeks:number;
+  adaptationWeights:PhaseAdaptationWeights;
+  volumeMultiplier:number;
+  intensityMultiplier:number;
+  hypertrophyFloor:number;
+  fatigueBudget:number;
+}
+
+export interface PeriodizationCycle {
+  id:string;
+  totalWeeks:number;
+  phaseOrder:PhaseType[];
+}
+
+export interface PeriodizationState {
+  cycleId:string;
+  currentPhaseId:string;
+  weekInPhase:number;
+  completedWeeks:number;
+  lastTransitionAt?:number;
+}
+
+export type PhaseTransitionAction = "STAY"|"ADVANCE"|"DELOAD"|"REPEAT"|"EXTEND";
+
+export interface PhaseTransitionDecision {
+  action:PhaseTransitionAction;
+  currentPhaseId:string;
+  nextPhaseId?:string;
+  reason:string;
+  confidence:number;
+}
+
+export interface StimulusProfile {
+  skill:number;
+  strength:number;
+  hypertrophy:number;
+  endurance:number;
+  power:number;
+  fatigue:number;
+}
+
 export interface ProgressionSpec {
   current:string;
   next:string;
   rule:string;
   targetProgression:TargetProgressionCriteria;
   variantMastery:VariantMasteryCriteria;
+  progressionGate?: ProgressionGate;
   regression?:string;
   bandMode?:BandMode;
 }
@@ -140,6 +220,7 @@ export interface SessionSummary {
   id:string; date:number; day:DayKey; durationSec:number; readiness:Readiness;
   logs:WorkoutLog[]; totalReps:number; emomReps:number; bestSkillSeconds:number;
   sessionNote?:string;
+  sessionFatigue?:1|2|3|4|5;
 }
 
 export interface ProgramOverride { exerciseId:string; variantId?:string; catalogExerciseId?:string; name?:string; detail?:string; kind?:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; target?:string; sets?:number; rest?:number; minutes?:number; bandOptions?:Band[]; defaultBand?:Band; updatedAt:number; previous?:ProgramOverride|null; }
@@ -166,10 +247,44 @@ export function exerciseExposureKeyString(key:ExerciseExposureKey):string {
   return `${key.exerciseId}::${key.variantId}`;
 }
 
+export type CoachExperimentStatus = "proposed"|"active"|"verified"|"rolled_back"|"inconclusive";
+
+export interface CoachExperiment {
+  id:string;
+  createdAt:number;
+  proposalId:string;
+  exerciseId?:string;
+  title:string;
+  hypothesis:string;
+  baseline:string;
+  intervention:string;
+  successCriteria:string[];
+  expectedObservations:number;
+  observations:number;
+  status:CoachExperimentStatus;
+  startedAt?:number;
+  completedAt?:number;
+  outcome?:string;
+  evidenceSessionIds:string[];
+  appliedAt?:number;
+  previousOverride?:ProgramOverride|null;
+  interventionValue?:number;
+  baselineMetrics?:Record<string,number>;
+  guardrails?:Record<string,number>;
+  outcomeType?:ExperimentOutcome;
+  rollbackAvailable?:boolean;
+}
+
 export interface CoachProposal {
   id:string; date:number; type:"target"|"variant"|"program_review"; exerciseId:string; variantId?:string;
   title:string; detail:string; from:string; to:string; reason:string;
-  status:"pending"|"accepted"|"rejected"; sessionId?:string;
+  status:ProposalStatus; sessionId?:string;
+  experimentId?:string;
+  confidenceLevel?:"LOW"|"MEDIUM"|"HIGH";
+  evidence?:{label:string;value:string}[];
+  warnings?:string[];
+  oldValue?:string;
+  newValue?:string;
 }
 
 export interface WorkoutDraft {
