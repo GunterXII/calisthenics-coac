@@ -4,9 +4,9 @@ module.exports={
   theme:{extend:{
     colors:{
       ink:"#09090B",panel:"#111114",panel2:"#17171C",line:"#29292F",
-      violet:"#8B5CF6",violet2:"#B79CFF",muted:"#94949D"
+      violet:"#B8F500",violet2:"#D7FF5A",muted:"#94949D"
     },
-    boxShadow:{glow:"0 14px 45px rgba(139,92,246,.20)"},
+    boxShadow:{glow:"0 14px 45px rgba(184,245,0,.16)"},
     borderRadius:{xl2:"18px"}
   }},
   plugins:[]

@@ -6,10 +6,10 @@
 html,body,#root{min-height:100%;margin:0;max-width:100%;overflow-x:hidden}
 body{font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#09090B}
 h1{font-size:clamp(38px,8vw,62px);line-height:.95;letter-spacing:-.065em;font-weight:800;margin:.55rem 0}
-.eyebrow,.section-kicker,.tag{font-size:9px;font-weight:800;letter-spacing:.17em;color:#B79CFF}
+.eyebrow,.section-kicker,.tag{font-size:9px;font-weight:800;letter-spacing:.17em;color:#D7FF5A}
 .sub{font-size:12px;color:#94949D;line-height:1.55}
 .field-label{display:block;margin-bottom:5px;font-size:8px;font-weight:800;letter-spacing:.14em;color:#66666E}
-.primary-cta{display:flex;align-items:center;justify-content:center;gap:.45rem;border:0;border-radius:12px;background:linear-gradient(135deg,#7C3AED,#9B73F0);padding:.9rem 1rem;font-size:10px;font-weight:800;letter-spacing:.08em;box-shadow:0 14px 45px rgba(139,92,246,.18)}
+.primary-cta{display:flex;align-items:center;justify-content:center;gap:.45rem;border:0;border-radius:12px;background:linear-gradient(135deg,#9CCF00,#D7FF5A);padding:.9rem 1rem;font-size:10px;font-weight:800;letter-spacing:.08em;box-shadow:0 14px 45px rgba(184,245,0,.14)}
 .secondary-cta{display:flex;align-items:center;justify-content:center;gap:.45rem;border:1px solid #38333F;border-radius:12px;background:#17171C;padding:.9rem 1rem;font-size:10px;font-weight:800}
 .danger-cta{border:1px solid #4A3131;border-radius:12px;background:#211417;padding:1rem;color:#F1B7B7;font-size:10px;font-weight:800}
 .counter-input{width:150px;max-width:42vw;border:1px solid #3A3443;background:#151519;border-radius:14px;padding:8px 12px;text-align:center;font-size:30px;font-weight:800;color:#fff;outline:none}
@@ -24,15 +24,15 @@ h1{font-size:clamp(38px,8vw,62px);line-height:.95;letter-spacing:-.065em;font-we
 .history-row{display:grid;grid-template-columns:70px 1fr 85px;gap:8px;border-top:1px solid #29292F;padding:11px 0;font-size:10px}
 .history-row span{color:#777780}
 .history-card{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;margin-top:6px;border:1px solid #29292F;border-radius:14px;background:#111114;padding:12px;text-align:left}
-.history-card.selected{border-color:rgba(139,92,246,.6)}
+.history-card.selected{border-color:rgba(184,245,0,.55)}
 .history-card b{display:block;font-size:11px}
 .history-card span{font-size:9px;color:#777780}
 select{background:#151519;border:1px solid #303038;border-radius:10px;color:white;padding:.7rem .8rem;font-size:10px;outline:none;min-width:0}
 @media(max-width:700px){.history-row{grid-template-columns:64px 1fr 70px}}
 
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
-.nav-item-active{color:#b79cff;background:rgba(139,92,246,.08)}
-.nav-item:focus-visible{outline:2px solid rgba(183,156,255,.7);outline-offset:-2px}
+.nav-item-active{color:#b79cff;background:rgba(184,245,0,.07)}
+.nav-item:focus-visible{outline:2px solid rgba(215,255,90,.72);outline-offset:-2px}
 .workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
 .workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
 .workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
@@ -40,8 +40,8 @@ select{background:#151519;border:1px solid #303038;border-radius:10px;color:whit
 @media(min-width:700px){.workout-context-progress-bar{width:120px}}
 
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
-.nav-item-active{color:#b79cff;background:rgba(139,92,246,.08)}
-.nav-item:focus-visible{outline:2px solid rgba(183,156,255,.7);outline-offset:-2px}
+.nav-item-active{color:#b79cff;background:rgba(184,245,0,.07)}
+.nav-item:focus-visible{outline:2px solid rgba(215,255,90,.72);outline-offset:-2px}
 .workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
 .workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
 .workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
@@ -49,10 +49,455 @@ select{background:#151519;border:1px solid #303038;border-radius:10px;color:whit
 @media(min-width:700px){.workout-context-progress-bar{width:120px}}
 
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
-.nav-item-active{color:#b79cff;background:rgba(139,92,246,.08)}
-.nav-item:focus-visible{outline:2px solid rgba(183,156,255,.7);outline-offset:-2px}
+.nav-item-active{color:#b79cff;background:rgba(184,245,0,.07)}
+.nav-item:focus-visible{outline:2px solid rgba(215,255,90,.72);outline-offset:-2px}
 .workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
 .workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
 .workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
 .workout-context-progress-bar span{display:block;height:100%;border-radius:999px;background:#8b5cf6}
 @media(min-width:700px){.workout-context-progress-bar{width:120px}}
+
+/* ─────────────────────────────────────────────────────────────
+   PREMIUM ATHLETE UI LAYER — visual only
+   No interaction, data, calculation or workout behavior changes.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --ui-bg:#09090B;
+  --ui-surface:#111114;
+  --ui-surface-2:#151519;
+  --ui-border:rgba(255,255,255,.085);
+  --ui-border-strong:rgba(255,255,255,.13);
+  --ui-text:#F5F5F7;
+  --ui-muted:#8E8E98;
+  --ui-subtle:#74747E;
+  --ui-accent:#B8F500;
+  --ui-accent-soft:#D7FF5A;
+}
+
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit}
+button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+input,select,textarea{color:var(--ui-text)}
+input::placeholder,textarea::placeholder{color:#5F5F68}
+
+/* Contrast: secondary copy was too close to the background on OLED screens. */
+[class~="text-zinc-600"]{color:#74747E !important}
+[class~="text-zinc-500"]{color:#8E8E98 !important}
+[class~="text-zinc-400"]{color:#A7A7B0 !important}
+[class~="text-zinc-300"]{color:#D1D1D7 !important}
+
+h1{font-size:clamp(42px,8vw,62px);line-height:.94;letter-spacing:-.055em}
+.sub{font-size:14px;line-height:1.6;color:var(--ui-muted)}
+.eyebrow,.section-kicker{font-size:10px;letter-spacing:.19em}
+.field-label{font-size:9px;letter-spacing:.15em;color:#777780}
+
+/* One surface language across the whole app. */
+[class~="rounded-2xl"][class~="border"],
+[class~="rounded-xl"][class~="border"]{
+  border-color:var(--ui-border);
+  box-shadow:none;
+}
+[class~="bg-panel"]{background:var(--ui-surface)}
+[class~="bg-panel2"]{background:var(--ui-surface-2)}
+[class~="border-line"]{border-color:var(--ui-border)}
+
+/* Purple is reserved for focus, progression and important Coach context. */
+[class~="bg-violet-500/5"]{background:rgba(184,245,0,.025) !important}
+[class~="border-violet-500/10"]{border-color:rgba(184,245,0,.08) !important}
+[class~="border-violet-500/15"]{border-color:rgba(184,245,0,.10) !important}
+[class~="border-violet-500/20"]{border-color:rgba(184,245,0,.12) !important}
+
+.primary-cta{
+  min-height:48px;
+  border-radius:14px;
+  padding:.8rem 1.05rem;
+  letter-spacing:.1em;
+  box-shadow:0 10px 30px rgba(184,245,0,.11);
+  transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;
+}
+.primary-cta:hover:not(:disabled){filter:brightness(1.06);box-shadow:0 12px 34px rgba(184,245,0,.16)}
+.primary-cta:active:not(:disabled){transform:scale(.985)}
+.secondary-cta{
+  min-height:46px;
+  border-radius:14px;
+  border-color:var(--ui-border-strong);
+  background:#121216;
+  color:#D8D8DE;
+  transition:background .12s ease,border-color .12s ease,color .12s ease;
+}
+.secondary-cta:hover:not(:disabled){background:#18181D;border-color:rgba(255,255,255,.18);color:#fff}
+.danger-cta{min-height:48px;border-radius:14px}
+
+.counter-btn,.mini-btn{
+  min-width:44px;
+  min-height:44px;
+  height:44px;
+  border-radius:13px;
+  border-color:var(--ui-border-strong);
+  background:#151519;
+}
+.counter-btn{min-width:48px;min-height:48px;height:48px}
+.counter-input{
+  min-height:64px;
+  border-radius:16px;
+  background:#151519;
+  border-color:var(--ui-border-strong);
+  font-size:32px;
+}
+select{
+  min-height:44px;
+  border-radius:12px;
+  background:#151519;
+  border-color:var(--ui-border-strong);
+}
+select:focus,input:focus,textarea:focus{outline:2px solid rgba(215,255,90,.52);outline-offset:1px}
+button:focus-visible,a:focus-visible{outline:2px solid rgba(215,255,90,.74);outline-offset:2px}
+
+/* Chips are metadata, not buttons competing with the primary CTA. */
+.chip{
+  min-height:32px;
+  padding:.42rem .68rem;
+  border-color:var(--ui-border);
+  background:#151519;
+}
+
+.session-row{
+  border-color:var(--ui-border);
+  background:#101013;
+  border-radius:18px;
+  padding:17px;
+}
+.session-row strong{font-size:15px;line-height:1.3}
+.session-row p{font-size:12px;line-height:1.6}
+
+.workout-context{padding:8px 0 0}
+.workout-context-progress{color:#777780;font-size:9px}
+.workout-context-progress-bar{height:5px;background:#19191E}
+.workout-context-progress-bar span{background:var(--ui-accent)}
+
+/* Bottom navigation: larger touch targets, quieter chrome, clearer active state. */
+.nav-item{
+  min-height:58px;
+  margin:5px 3px;
+  gap:5px;
+  border-radius:15px;
+  font-size:9px;
+  letter-spacing:.13em;
+}
+.nav-item svg{stroke-width:1.9}
+.nav-item-active{
+  color:var(--ui-accent-soft);
+  background:rgba(184,245,0,.08);
+}
+
+/* Avoid nested-card overload while keeping every functional container. */
+.history-card{background:#101013;border-color:var(--ui-border)}
+.history-card.selected{border-color:rgba(184,245,0,.45)}
+
+/* Dense metric grids should read as one group rather than four unrelated cards. */
+[class~="grid"][class~="grid-cols-3"] > [class~="rounded-2xl"][class~="border"],
+[class~="grid"][class~="grid-cols-4"] > [class~="rounded-2xl"][class~="border"]{
+  min-width:0;
+}
+
+/* Mobile ergonomics: keep controls above the home indicator and prevent tiny tap targets. */
+@media(max-width:700px){
+  main{padding-bottom:max(24px,env(safe-area-inset-bottom))}
+  .primary-cta,.secondary-cta{min-height:48px}
+  .mini-btn{min-width:40px;width:40px;height:40px;min-height:40px}
+  .counter-btn{min-width:48px;width:48px}
+  .nav-item{min-height:56px}
+}
+
+/* Status / loading states use the same restrained surface language. */
+[class~="bg-black/75"],[class~="bg-black/70"]{background:rgba(0,0,0,.78) !important}
+
+/* Scrollbars stay nearly invisible until used. */
+*{scrollbar-width:thin;scrollbar-color:#29292F transparent}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#29292F;border-radius:999px}
+
+.effort-panel{background:#101013 !important}
+.effort-panel button{min-height:46px}
+.effort-panel [aria-pressed="true"]{border-color:rgba(215,255,90,.82);background:rgba(184,245,0,.10);color:#D7C8FF}
+.effort-panel .field-label{margin-bottom:0}
+
+/* Compact metadata rows read as information, not extra cards. */
+.field-label + .text-sm,.field-label + .text-lg,.field-label + .text-xl{line-height:1.2}
+
+/* Keep large numeric focus in the workout player, but make supporting text quieter. */
+.counter-input:focus{box-shadow:0 0 0 3px rgba(184,245,0,.07)}
+
+/* Error / success messages should look like state, not another content card. */
+[class*="text-rose-300"]{line-height:1.45}
+[class*="text-emerald-300"]{line-height:1.45}
+
+
+/* ========================================================================
+   PHASE 1 — BLACK + LIME DESIGN SYSTEM
+   UI ONLY. No business logic, data, calculations or workout behavior.
+   ======================================================================== */
+:root{
+  --ui-bg:#080909;
+  --ui-surface:#101211;
+  --ui-surface-2:#151715;
+  --ui-surface-3:#1A1D19;
+  --ui-border:rgba(255,255,255,.085);
+  --ui-border-strong:rgba(255,255,255,.14);
+  --ui-text:#F5F7F2;
+  --ui-muted:#92988F;
+  --ui-subtle:#70766E;
+  --ui-accent:#B8F500;
+  --ui-accent-soft:#D7FF5A;
+  --ui-accent-dim:rgba(184,245,0,.10);
+  --ui-danger:#FF5B5B;
+  --ui-warning:#FFBF3F;
+  --ui-success:#62D96B;
+}
+
+html,body,#root{background:var(--ui-bg)}
+body{color:var(--ui-text);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+/* Accent utility compatibility: existing JSX keeps its behavior/classes,
+   while the visual token becomes lime. */
+.bg-violet-500{background-color:var(--ui-accent)!important}
+.bg-violet-500\/5{background-color:rgba(184,245,0,.025)!important}
+.bg-violet-500\/10{background-color:rgba(184,245,0,.08)!important}
+.bg-violet-500\/30{background-color:rgba(184,245,0,.18)!important}
+.bg-violet-600{background-color:var(--ui-accent)!important}
+.text-violet-300,.text-violet-400,.text-violet2{color:var(--ui-accent-soft)!important}
+.border-violet-400{border-color:rgba(184,245,0,.55)!important}
+.border-violet-500{border-color:rgba(184,245,0,.55)!important}
+.border-violet-500\/10{border-color:rgba(184,245,0,.09)!important}
+.border-violet-500\/15{border-color:rgba(184,245,0,.13)!important}
+.border-violet-500\/20{border-color:rgba(184,245,0,.16)!important}
+.border-violet-500\/40{border-color:rgba(184,245,0,.36)!important}
+
+/* Primary action: one unmistakable lime action per screen. */
+.primary-cta{
+  background:var(--ui-accent)!important;
+  color:#080A08!important;
+  box-shadow:0 12px 32px rgba(184,245,0,.13);
+  font-weight:900;
+}
+.primary-cta:hover:not(:disabled){filter:brightness(1.04);box-shadow:0 14px 36px rgba(184,245,0,.18)}
+.primary-cta:active:not(:disabled){transform:scale(.985)}
+.primary-cta:focus-visible{outline:2px solid var(--ui-accent-soft);outline-offset:3px}
+
+/* Secondary actions stay neutral; they should never compete with lime. */
+.secondary-cta{
+  background:#121412!important;
+  border-color:var(--ui-border-strong)!important;
+  color:#E2E6DF!important;
+}
+.secondary-cta:hover:not(:disabled){background:#181B18!important;border-color:rgba(255,255,255,.20)!important}
+
+/* Cards: subtle separation instead of visible boxes everywhere. */
+.session-row,.history-card,.effort-panel,[class~="bg-panel"]{
+  background:var(--ui-surface);
+}
+[class~="bg-panel2"]{background:var(--ui-surface-2)}
+[class~="border-line"]{border-color:var(--ui-border)}
+[class~="rounded-2xl"][class~="border"],[class~="rounded-xl"][class~="border"]{
+  box-shadow:0 1px 0 rgba(255,255,255,.018) inset;
+}
+
+/* Labels are intentionally quiet. The value/action gets the attention. */
+.eyebrow,.section-kicker,.tag{color:var(--ui-accent-soft)!important}
+.field-label{color:#747A72!important}
+
+/* Selected controls: lime outline/fill, not a purple glow. */
+.effort-panel [aria-pressed="true"]{
+  border-color:rgba(184,245,0,.78)!important;
+  background:rgba(184,245,0,.11)!important;
+  color:#E9FFC0!important;
+  box-shadow:0 0 0 1px rgba(184,245,0,.08) inset;
+}
+.history-card.selected{border-color:rgba(184,245,0,.45)!important}
+.nav-item-active{
+  color:var(--ui-accent)!important;
+  background:rgba(184,245,0,.075)!important;
+}
+.workout-context-progress-bar span{background:var(--ui-accent)!important}
+
+/* Focus states use the same accent language everywhere. */
+select:focus,input:focus,textarea:focus,
+button:focus-visible,a:focus-visible{
+  outline-color:var(--ui-accent-soft)!important;
+}
+.counter-input:focus{box-shadow:0 0 0 3px rgba(184,245,0,.08)!important}
+
+/* Disabled controls remain legible enough to understand why they cannot be used. */
+button:disabled,input:disabled,select:disabled{opacity:.38}
+
+/* Mobile touch ergonomics: retain generous targets without inflating visual chrome. */
+@media(max-width:700px){
+  .primary-cta,.secondary-cta{min-height:50px}
+  .counter-btn{min-width:48px;width:48px;height:48px}
+  .mini-btn{min-width:42px;width:42px;height:42px}
+  .nav-item{min-height:58px}
+}
+
+/* =====================================================================
+   PHASE 2 — SCREEN COMPOSITION
+   UI only: hierarchy, density, ergonomics and consistency.
+   ===================================================================== */
+.today-screen,.plan-screen{padding-bottom:1.5rem}
+.today-hero{padding-top:.25rem}
+.today-hero h1{max-width:10ch}
+.day-switcher{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:1.35rem 0 1rem}
+.day-pill{min-height:44px;border:1px solid var(--ui-border);border-radius:12px;background:#101211;color:#676D65;font-size:9px;font-weight:900;letter-spacing:.08em;transition:background .12s,border-color .12s,color .12s,transform .12s}
+.day-pill:active{transform:scale(.97)}
+.day-pill-active{background:var(--ui-accent)!important;border-color:var(--ui-accent)!important;color:#080A08!important}
+.day-pill:focus-visible{outline:2px solid var(--ui-accent-soft);outline-offset:2px}
+.today-context{border-color:var(--ui-border-strong)!important}
+.phase-pill{border:1px solid rgba(184,245,0,.22);border-radius:999px;padding:.35rem .55rem;color:var(--ui-accent-soft);font-size:8px;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+.session-row{position:relative;overflow:hidden}
+.session-row-warmup{background:linear-gradient(180deg,#151815,#101211)!important}
+.prescription-badge,.prescription-chip{display:inline-flex;align-items:center;min-height:26px;border:1px solid var(--ui-border);border-radius:999px;background:#151815;padding:.25rem .5rem;color:#B8BDB5;font-size:8px;font-weight:900;letter-spacing:.06em;white-space:nowrap}
+.prescription-badge{flex-shrink:0;color:#D9E0D5}
+.prescription-chip-accent{border-color:rgba(184,245,0,.24);color:var(--ui-accent-soft);background:rgba(184,245,0,.05)}
+.compact-stat-card{border:1px solid var(--ui-border);border-radius:18px;background:var(--ui-surface);padding:1rem}
+.compact-stat-card strong{font-size:1.25rem;letter-spacing:-.03em}
+.compact-stat-card span{font-size:9px;color:#7D837B}
+
+.plan-week-nav{border:1px solid var(--ui-border);border-radius:20px;background:var(--ui-surface);padding:1rem}
+.plan-health-card{background:linear-gradient(180deg,#111411,#0F110F)!important}
+.plan-health-score{min-width:62px}
+.plan-health-row{border-color:rgba(255,255,255,.065)!important}
+.plan-day-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem}
+.plan-count{display:flex;flex-direction:column;align-items:flex-end;color:#70766E}
+.plan-count strong{font-size:1.5rem;line-height:1;color:#F2F5EF}
+.plan-count span{margin-top:4px;font-size:7px;font-weight:900;letter-spacing:.12em}
+.plan-exercise-row{transition:border-color .12s,background .12s}
+.plan-exercise-row.is-customized{border-color:rgba(184,245,0,.22)!important}
+.plan-exercise-number{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:10px;background:#191C18;color:#6F766C;font-size:9px;font-weight:900}
+.plan-exercise-row.is-customized .plan-exercise-number{background:rgba(184,245,0,.08);color:var(--ui-accent-soft)}
+
+/* Workout player: make the athlete's action area dominant. */
+.fixed.inset-0.z-50 .workout-context{margin-top:.25rem;padding-top:.25rem}
+.fixed.inset-0.z-50 .workout-context-progress{color:#7C8279}
+.fixed.inset-0.z-50 h2{letter-spacing:-.045em}
+.fixed.inset-0.z-50 .effort-panel{border-color:rgba(255,255,255,.07);background:#101311}
+.effort-option,.effort-option-active{min-height:46px;border-radius:13px;font-weight:900}
+.effort-option{border-color:var(--ui-border)!important;background:#151815!important;color:#777D74!important}
+.effort-option:hover{color:#DDE4D9!important;border-color:var(--ui-border-strong)!important}
+.effort-option-active{border-color:rgba(184,245,0,.78)!important;background:rgba(184,245,0,.11)!important;color:#E9FFC0!important;box-shadow:0 0 0 1px rgba(184,245,0,.08) inset}
+
+/* Avoid tiny controls becoming visual noise on small screens. */
+@media(max-width:700px){
+  .today-screen,.plan-screen{padding-bottom:.5rem}
+  .today-hero h1{font-size:clamp(42px,13vw,58px)}
+  .day-switcher{gap:4px}
+  .day-pill{min-height:46px}
+  .prescription-badge{font-size:7px;padding:.22rem .42rem}
+  .plan-day-header h2{font-size:1.25rem}
+  .plan-exercise-row{padding:1rem}
+}
+@media(min-width:701px){
+  .today-screen,.plan-screen{max-width:880px;margin:0 auto}
+}
+
+/* Respect reduced-motion without changing interactions. */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.001ms!important;animation-duration:.001ms!important}
+}
+
+/* ========================================================================
+   PHASE 3 — WORKOUT PLAYER
+   UI-only: no business logic, state, calculations, persistence or behavior.
+   The player is the athlete's execution surface: reduce noise, enlarge the
+   action, keep context available but subordinate.
+   ======================================================================== */
+.workout-player-shell{--player-gutter:clamp(16px,4vw,28px)}
+.workout-player-header{box-shadow:0 1px 0 rgba(255,255,255,.025)}
+.workout-player-header .h-0\.5{height:3px;background:#161914}
+.workout-player-header .h-0\.5>div{background:var(--ui-accent)!important}
+.workout-player-scroll{scrollbar-width:thin;scrollbar-color:#30332d transparent}
+.workout-player-content{width:100%}
+.workout-coach-note{background:rgba(184,245,0,.025)!important;border-color:rgba(184,245,0,.10)!important}
+.workout-coach-note .tag{color:var(--ui-accent)}
+.workout-context{margin-top:2px;padding:8px 0 0}
+.workout-exercise-title{font-size:clamp(40px,10vw,72px);line-height:.93;letter-spacing:-.06em;max-width:11ch}
+.workout-rest-meta{font-size:10px;color:#777d74!important}
+
+/* The target is a reference, not the main action. Make it visually lighter. */
+.target-panel{padding:14px 16px!important;border-radius:16px!important;background:#0f110f!important}
+.target-panel .field-label{color:#777d74}
+.target-panel b{font-size:16px}
+
+/* Repetition entry: large, calm, unmistakably interactive. */
+.set-player>div:nth-child(2),.side-set-player>div:nth-child(2){
+  margin-top:clamp(28px,7vw,52px)!important;
+}
+.set-player .counter-input,.side-set-player .counter-input{
+  width:min(168px,42vw);
+  min-height:76px;
+  font-size:38px;
+  border-radius:18px;
+  border-color:rgba(255,255,255,.13);
+  background:#131612;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.set-player .counter-btn,.side-set-player .counter-btn{width:52px;height:52px;border-radius:16px}
+.set-player .primary-cta,.side-set-player .primary-cta,.emom-player .primary-cta,.static-skill-player .primary-cta{min-height:54px;border-radius:16px;font-size:11px}
+
+/* Primary action stays visually dominant; secondary actions recede. */
+.set-player>.grid,.side-set-player>.primary-cta,.side-set-player>.secondary-cta{margin-top:22px}
+.set-player .secondary-cta,.side-set-player .secondary-cta{background:#101210;color:#888f85}
+
+/* Effort collection is useful coaching data, but should never compete with reps. */
+.effort-panel{margin-top:24px!important;border-radius:18px!important;background:#0f110f!important;border-color:rgba(255,255,255,.07)!important}
+.effort-panel .field-label{font-size:8px;color:#747a71}
+.effort-panel button{min-height:44px;border-radius:13px}
+.effort-panel .effort-option{background:#151815;border-color:rgba(255,255,255,.08);color:#777d74}
+.effort-panel .effort-option-active{background:var(--ui-accent-dim)!important;border-color:rgba(184,245,0,.72)!important;color:var(--ui-accent-soft)!important;box-shadow:0 0 0 1px rgba(184,245,0,.10)}
+
+/* Logged sets are history, not competing actions. */
+.set-player .chip,.side-set-player .chip,.emom-player .chip,.static-skill-player .chip{background:#101210;border-color:rgba(255,255,255,.07);color:#858b82}
+
+/* Recovery: one focal number, one ring, one action. */
+.rest-player{min-height:100%}
+.rest-player>div:first-child .field-label{color:var(--ui-accent);font-size:10px}
+.rest-player .relative{width:min(260px,72vw)!important;height:min(260px,72vw)!important;margin-top:28px}
+.rest-player svg circle:last-child{color:var(--ui-accent)!important}
+.rest-player .text-6xl{font-size:clamp(64px,18vw,88px);letter-spacing:-.065em}
+.rest-player button{min-height:46px;border-radius:14px}
+
+/* EMOM: timer is the product. Supporting controls stay below the fold hierarchy. */
+.emom-player .text-7xl{font-size:clamp(72px,21vw,112px);letter-spacing:-.075em;line-height:.9}
+.emom-player .rounded-2xl{border-radius:16px}
+.emom-player .counter-input{min-height:68px}
+
+/* Static skill: same visual grammar as the rest of the player. */
+.static-skill-player .text-\[92px\]{font-size:clamp(76px,21vw,128px);letter-spacing:-.075em;line-height:.88}
+.static-skill-player .danger-cta{min-height:54px;border-radius:16px;background:#241515;border-color:rgba(255,91,91,.28)}
+
+/* Side work: make side/round state instantly scannable. */
+.side-set-player .rounded-2xl.border-violet-500\/20{background:rgba(184,245,0,.025)!important;border-color:rgba(184,245,0,.10)!important}
+
+/* Fixed substitute/skip actions are intentionally quiet until needed. */
+.workout-player-shell .pointer-events-none.fixed{padding-bottom:calc(env(safe-area-inset-bottom) + 10px)}
+.workout-player-shell .pointer-events-none.fixed button{min-height:42px;border-radius:999px}
+
+/* Modals use the same surface language instead of introducing a new visual style. */
+.workout-modal>div{background:#111411;border-color:rgba(255,255,255,.10)}
+
+@media(max-width:700px){
+  .workout-player-content{padding-left:var(--player-gutter);padding-right:var(--player-gutter)}
+  .workout-player-header .mx-auto{padding-left:12px;padding-right:12px}
+  .workout-exercise-title{max-width:100%;font-size:clamp(38px,11vw,54px)}
+  .workout-coach-note{padding:12px!important}
+  .target-panel{padding:13px!important}
+  .set-player .grid.gap-2,.side-set-player .grid.gap-2{gap:8px}
+}
+
+@media(min-width:701px){
+  .workout-player-content{padding-left:32px;padding-right:32px}
+  .set-player .counter-input{min-height:82px;font-size:40px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .primary-cta,.secondary-cta,.effort-panel button{transition:none!important}
+}
