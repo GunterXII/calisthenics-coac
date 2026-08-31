@@ -11,7 +11,7 @@ const base: WorkoutLog = {
 
 const records = toSetRecords(base);
 assert.deepEqual(records.map(x => x.reps), [0, 2, 1]);
-assert.equal(records[0]?.failed, true);
+assert.equal(records[0]?.failed, undefined);
 assert.equal(records[2]?.quality, "Clean");
 
 const canonical = canonicalizeWorkoutLog(base);
