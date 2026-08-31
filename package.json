@@ -18,6 +18,7 @@
     "test:phase17": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachExperiment.phase17.test.ts",
     "test:phase18": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/coachTools.phase18.test.ts",
     "test:phase2": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/periodizationEngine.phase2.test.ts",
+    "test:phase2-prescription": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/prescriptionEngine.phase2.test.ts",
     "test:phase3": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/programBuilder.phase3.test.ts",
     "test:phase4": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/adaptiveProgramEngine.phase4.test.ts",
     "test:phase5": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/goalAnalytics.phase5.test.ts",
