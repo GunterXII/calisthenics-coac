@@ -4,6 +4,7 @@ import {trainingProfileForBlock} from './trainingModel';
 import {recoveryForMuscle, weeklyWorkload} from './workloadEngine';
 import {buildPeriodizedDay} from './programBuilder';
 import {resolveDensityPrescription} from './densityEngine';
+import {stripPrescriptionPrefix} from './prescriptionText';
 
 function resolveDensityBlock(block:ExerciseBlock,sessions:SessionSummary[]):ExerciseBlock{
   return resolveDensityPrescription(block,sessions);
@@ -16,6 +17,7 @@ export type AdaptiveAdjustmentAction =
   | 'ADD_DENSITY'
   | 'REDUCE_VOLUME'
   | 'REDUCE_DENSITY'
+  | 'HOLD_DENSITY'
   | 'HOLD';
 
 export interface AdaptiveBlockDecision {
@@ -109,7 +111,7 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
   const fresh = report.overallRecovery === 'FRESH' && readiness >= 75 && !lowRecovery;
 
   if (highFatigue && (profile.priority !== 'primary' || !isPrimarySkill(block))) {
-    if (block.trainingMethod === 'DENSITY_5X70') return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:0,reason:'Recent workload is high; keep the fixed density dose and do not shorten recovery until readiness improves.',confidence:0.92};
+    if (block.trainingMethod === 'DENSITY_5X70') return {exerciseId:block.id,action:'HOLD_DENSITY',setsDelta:0,minutesDelta:0,reason:'Recent workload is high; keep the fixed density dose and do not shorten recovery until readiness improves.',confidence:0.92};
     if (block.kind === 'EMOM' || isEndurance(block)) return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent workload is high; reduce low-priority density before cutting primary skill work.',confidence:0.90};
     if (block.sets && block.sets > 1) return {exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Recent workload/recovery is high; reduce lower-priority volume.',confidence:0.90};
   }
@@ -122,6 +124,7 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
 
   if (performance.low) {
     if (isPrimarySkill(block)) return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; keep the skill exposure stable and avoid adding fatigue.',confidence:0.86};
+    if (block.trainingMethod === 'DENSITY_5X70') return {exerciseId:block.id,action:'HOLD_DENSITY',setsDelta:0,minutesDelta:0,reason:'Recent density output is below target; keep the fixed dose and do not shorten recovery until performance stabilizes.',confidence:0.86};
     if (block.kind === 'EMOM' || isEndurance(block)) return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent endurance output is below target; reduce density slightly instead of pushing failure.',confidence:0.84};
     return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; repeat the prescription and rebuild quality.',confidence:0.84};
   }
@@ -165,7 +168,28 @@ export function buildAdaptivePeriodizedDay(phase:PhasePlan, day:DayKey, goals:im
         : Math.max(1, next.sets + decision.setsDelta);
     }
     if (typeof next.minutes === 'number') next.minutes = Math.max(5, next.minutes + decision.minutesDelta);
-    next.detail = `${next.detail} · Coach: ${decision.action.replace('_',' ').toLowerCase()}`;
+    const detail = stripPrescriptionPrefix(next.detail);
+    const actionLabel = decision.action === 'HOLD_DENSITY'
+      ? 'Mantieni la densità · recupero invariato'
+      : decision.action === 'REDUCE_DENSITY' && next.kind === 'EMOM'
+        ? `Densità ridotta oggi · ${next.minutes ?? 0} min`
+        : decision.action === 'REDUCE_DENSITY'
+          ? 'Densità ridotta oggi'
+          : decision.action === 'REDUCE_VOLUME'
+            ? `Volume ridotto oggi · ${next.sets ?? 0} set`
+            : decision.action === 'ADD_VOLUME'
+              ? `Volume aumentato · ${next.sets ?? 0} set`
+              : decision.action === 'ADD_DENSITY'
+                ? `Densità aumentata · ${next.minutes ?? 0} min`
+                : decision.action === 'PROTECT'
+                  ? 'Proteggi la qualità · nessun aumento'
+                  : decision.action === 'HOLD'
+                    ? 'Mantieni la prescrizione'
+                    : decision.action === 'NONE'
+                      ? 'Mantieni la prescrizione'
+                      : decision.action;
+    next.detail = detail;
+    next.coachNote = actionLabel;
     return next;
   });
   const report = weeklyWorkload(sessions, now);
