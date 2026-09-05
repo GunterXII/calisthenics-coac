@@ -42,7 +42,7 @@ assert.equal(touchMastery.consecutiveSessions, 3);
 
 const spec = progressionSpecForBlock(touch);
 assert.equal(spec.targetProgression.maxIncrement, 1);
-assert.equal(spec.variantMastery.nextVariantId, "touch-band-blue");
+assert.equal(spec.variantMastery.nextVariantId, "touch");
 
 const phase = phaseForCycleWeek(defaultPeriodizationCycle(), 1);
 const built = buildPeriodizedDay({ phase, day: "Tuesday", goals: ["front_lever_touch"] });

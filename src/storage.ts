@@ -1,5 +1,6 @@
 
 import {exerciseExposureKeyString} from "./types";
+import {buildCoachWeeklyReport,formatCoachWeeklyReport} from "./coachWeeklyIntelligence";
 import type {DayKey, MobilitySession, SessionSummary, WorkoutLog, ProgramOverride, CoachDecision, CoachProposal, CoachExperiment, CurrentVariantState, ExerciseExposureKey} from "./types";
 export type {ProgramOverride, CoachDecision, CoachProposal, CoachExperiment, CurrentVariantState} from "./types";
 
@@ -220,25 +221,8 @@ export function makeCoachHandoff(s:SessionSummary){
 }
 
 export function makeWeeklyReport(offset=0){
-  const end=Date.now()-offset*7*86400000,start=end-7*86400000;
-  const ss=getSessions().filter(s=>s.date>=start&&s.date<end).sort((a,b)=>a.date-b.date);
-  const reps=sum(ss.map(s=>s.totalReps)),emom=sum(ss.map(s=>s.emomReps));
-  const best=ss.reduce((m,s)=>Math.max(m,s.bestSkillSeconds),0);
-  const weights=ss.map(s=>s.readiness.weightKg).filter((x):x is number=>typeof x==="number"&&x>0);
-  const modified=ss.flatMap(s=>s.logs).filter(l=>l.status==="modified").length;
-  const incomplete=ss.flatMap(s=>s.logs).filter(l=>l.status==="incomplete").length;
-  const skipped=ss.flatMap(s=>s.logs).filter(l=>l.status==="skipped").length;
-  return [
-    `CALISTHENICS COACH — WEEKLY REPORT`,
-    `Sessions: ${ss.length}`,
-    `Total reps: ${reps}`,
-    `EMOM reps: ${emom}`,
-    `Best static skill: ${best.toFixed(1)}s`,
-    weights.length?`Weight: ${weights[0].toFixed(1)} → ${weights[weights.length-1]!.toFixed(1)} kg | avg ${(weights.reduce((a,b)=>a+b,0)/weights.length).toFixed(1)} kg`:"Weight: no data",
-    `Modified: ${modified} | Incomplete: ${incomplete} | Skipped: ${skipped}`,
-    "",
-    ...ss.map(s=>`${s.day}: ${Math.round(s.durationSec/60)} min | ${s.totalReps} reps | ${s.emomReps} EMOM | best ${s.bestSkillSeconds.toFixed(1)}s`)
-  ].join("\n");
+  const end=Date.now()-offset*7*86400000;
+  return formatCoachWeeklyReport(buildCoachWeeklyReport(getSessions(),undefined,end));
 }
 
 export function exportBackup(){

@@ -4,6 +4,16 @@ import {trainingProfileForBlock} from './trainingModel';
 import {recoveryForMuscle, weeklyWorkload} from './workloadEngine';
 import {buildPeriodizedDay} from './programBuilder';
 
+function resolveDensityBlock(block:ExerciseBlock,sessions:SessionSummary[]):ExerciseBlock{
+  if(block.trainingMethod!=="DENSITY_5X70"||!block.densityProtocol)return block;
+  const logs=sessions.flatMap(s=>s.logs||[])
+    .filter(l=>l.exerciseId===block.id&&l.status==="complete"&&!l.skipped)
+    .sort((a,b)=>b.date-a.date);
+  const rest=logs.find(l=>typeof l.prescription?.restSec==="number")?.prescription?.restSec;
+  if(typeof rest!=="number"||rest<block.densityProtocol.minRestSec||rest===block.rest)return block;
+  return {...block,rest};
+}
+
 export type AdaptiveAdjustmentAction =
   | 'NONE'
   | 'PROTECT'
