@@ -172,6 +172,7 @@ function prescriptionSnapshot(block:ExerciseBlock, todayTarget?:number):Prescrip
    progressionMode:profile.progressionMode,
    trainingMethod:block.trainingMethod,
    densityProtocol:block.densityProtocol,
+   progressionSpecId:block.progressionSpecId,
    fatigueCost:profile.fatigueCost,
    muscleGroups:profile.muscleGroups,
    effectiveSetWeight:profile.effectiveSetWeight,
