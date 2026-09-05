@@ -104,6 +104,7 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
   const fresh = report.overallRecovery === 'FRESH' && readiness >= 75 && !lowRecovery;
 
   if (highFatigue && (profile.priority !== 'primary' || !isPrimarySkill(block))) {
+    if (block.trainingMethod === 'DENSITY_5X70') return {exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Recent workload is high; reduce one density set before shortening the prescribed recovery.',confidence:0.92};
     if (block.kind === 'EMOM' || isEndurance(block)) return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent workload is high; reduce low-priority density before cutting primary skill work.',confidence:0.90};
     if (block.sets && block.sets > 1) return {exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Recent workload/recovery is high; reduce lower-priority volume.',confidence:0.90};
   }
@@ -125,7 +126,7 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
       const maxMinutes = clamp((block.minutes || 10) + 1, 5, 15);
       return {exerciseId:block.id,action:'ADD_DENSITY',setsDelta:0,minutesDelta:maxMinutes - (block.minutes || 0),reason:'Output is stable at the top of the target with adequate recovery; add one minute of sustainable density.',confidence:0.91};
     }
-    if (block.trainingRole === 'hypertrophy' && block.sets && block.sets < capSets(block)) {
+    if (block.trainingMethod !== 'DENSITY_5X70' && block.trainingRole === 'hypertrophy' && block.sets && block.sets < capSets(block)) {
       // Protect the phase budget: only add a set to hypertrophy when recovery is good.
       return {exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Top of the rep range is repeatable with good recovery; add one productive hypertrophy set.',confidence:0.89};
     }
@@ -136,7 +137,7 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
 
   // Hypertrophy floor safeguard: if a target muscle is lightly loaded, prefer adding
   // volume to a hypertrophy block rather than increasing fatigue-heavy skill work.
-  if (block.trainingRole === 'hypertrophy' && block.sets && block.sets < capSets(block)) {
+  if (block.trainingMethod !== 'DENSITY_5X70' && block.trainingRole === 'hypertrophy' && block.sets && block.sets < capSets(block)) {
     const thinMuscle = (profile.muscleGroups || []).find(m => report.muscles[m]?.adjustedSets < 6);
     if (thinMuscle && fresh) {
       return {exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:`${thinMuscle.replace(/_/g,' ')} is below the conservative hypertrophy floor; add one productive set.`,confidence:0.87};
