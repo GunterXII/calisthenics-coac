@@ -10,7 +10,7 @@ import type {
   SidePerformance,
 } from "./types";
 import type { ExerciseCatalogItem } from "./exercises";
-import {PROGRESSIONS,PROGRESSION_SPECS} from "./program";
+import { criteriaForBlock, masteryCriteriaForBlock, progressionGateForBlock, progressionSpecForBlock, nextTargetFromSpec } from "./progressionRegistry";
 import {trainingProfileForBlock} from "./trainingModel";
 
 export interface CoachingLogRecord {
@@ -261,61 +261,7 @@ export function referenceWeightFromLogs(logs:CoachingLogRecord[]){
   const weights=logs.map(x=>x.session?.readiness?.weightKg).filter((x):x is number=>typeof x==="number"&&x>0);return weights.length?weights[weights.length-1]:undefined;
 }
 
-export function masteryCriteriaForBlock(block: ExerciseBlock): ProgressionCriteria {
-  const sets = Math.max(1, Math.min(block.sets || 3, 5));
-  const target = parseTargetRange(block.target);
-  if (block.id === "oap") return { type:"reps", minSets:Math.min(3, sets), minReps:2, minRir:1, requireClean:false, consecutiveSessions:3, side:"both", minQualifyingRepsPerSide:2 };
-  if (block.id === "flpu") return { type:"reps", minSets:Math.min(3, sets), minReps:Math.max(1, target.max-1), minRir:1, requireClean:true, consecutiveSessions:3 };
-  if (block.id === "touch" || block.id === "front-lever-touch") return { type:"seconds", minHolds:Math.min(3, sets), minSeconds:Math.min(8, target.max || 4), minRir:1, requireClean:true, consecutiveSessions:3 };
-  if (block.kind === "EMOM") return { type:"emom", minutes:Math.max(1, Math.min(block.minutes || 10, 15)), minPerMinute:Math.max(1, target?.min || 1), maxDropoffPct:15, maxCvPct:20, minLastVsFirstPct:85, consecutiveSessions:3 };
-  if (block.progressionMode === "hypertrophy_reps") return { type:"reps", minSets:Math.min(3, sets), minReps:Math.max(1, target?.max || 1), minRir:1, requireClean:false, consecutiveSessions:2 };
-  return criteriaForBlock(block);
-}
-
-export function progressionGateForBlock(block: ExerciseBlock) {
-  return {
-    training: criteriaForBlock(block),
-    mastery: masteryCriteriaForBlock(block),
-    consecutiveExposures: masteryCriteriaForBlock(block).consecutiveSessions || 2,
-    reason: block.trainingRole === "skill" ? "Skill promotion requires repeated clean exposures; one good session is not enough." : "Use repeated comparable exposures before changing the dose."
-  };
-}
-
-export function criteriaForBlock(block:ExerciseBlock):ProgressionCriteria{
-  const target=parseTargetRange(block.target);const sets=Math.max(1,block.sets||3);const upper=target.max>0?target.max:1;
-  if(block.id==="touch"||block.id==="front-lever-touch")return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
-  if(block.id==="oap")return {type:"reps",minSets:Math.min(3,sets),minReps:2,minRir:2,requireClean:false,consecutiveSessions:2,side:"both",minQualifyingRepsPerSide:2};
-  if(block.kind==="SKILL_STATIC")return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
-  if(block.kind==="EMOM"){
-    const minPerMinute=Math.max(1,Math.floor(target.min||upper));
-    return {type:"emom",minutes:Math.max(1,block.minutes||10),minPerMinute,maxDropoffPct:15,maxCvPct:20,minLastVsFirstPct:85,consecutiveSessions:2,minRir:block.id.includes("dips")?2:undefined};
-  }
-  return {type:"reps",minSets:sets,minReps:upper,minRir:PROGRESSION_SPECS[block.id]?.rule.includes("RIR 1")||PROGRESSION_SPECS[block.id]?.rule.includes("RIR ≥1")||PROGRESSION_SPECS[block.id]?.rule.includes("RIR 1–2")?1:undefined,requireClean:false,consecutiveSessions:2};
-}
-
-export function progressionStreak(block:ExerciseBlock,logs:CoachingLogRecord[],criteria:ProgressionCriteria):number{
-  let streak=0;const required=criteria.consecutiveSessions||1;
-  for(let i=logs.length-1;i>=0;i--){const ev=evaluateProgression(block,logs[i],criteria);if(!ev.qualifies)break;streak++;if(streak>=required)break;}
-  return streak;
-}
-
-export function variantMasteryCriteria(block:ExerciseBlock):ProgressionCriteria{
-  if(block.id==="touch"||block.id==="front-lever-touch")return {type:"seconds",minHolds:3,minSeconds:8,minRir:1,requireClean:true,consecutiveSessions:2};
-  return criteriaForBlock(block);
-}
-
-export function progressionSpecForBlock(block:ExerciseBlock,nextVariantId?:string):import("./types").ProgressionSpec{
-  const targetCriteria=criteriaForBlock(block);const base=PROGRESSIONS[block.id];const registry=PROGRESSION_SPECS[block.id];const masteryCriteria=variantMasteryCriteria(block);
-  return {current:base?.current||block.name,next:base?.next||block.name,rule:base?.rule||"Exercise-specific progression criteria",bandMode:base?.bandMode,regression:base?.regression,targetProgression:{criteria:targetCriteria,maxIncrement:registry?.targetMaxIncrement},variantMastery:{criteria:masteryCriteria,nextVariantId:nextVariantId||registry?.variantMasteryNextVariantId||block.id}};
-}
-
-export function nextTargetFromSpec(currentTarget:string,spec:import("./types").ProgressionSpec,kind:ExerciseBlock["kind"]):string{
-  const m=currentTarget.match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);if(!m)return currentTarget;
-  const minV=Number(m[1]),maxV=Number(m[2]),inc=spec.targetProgression.maxIncrement??1;
-  const isSeconds=currentTarget.toLowerCase().includes("sec")||kind==="SKILL_STATIC";
-  if(isSeconds)return `${minV}–${maxV+inc} sec`;
-  return kind==="EMOM"?`${minV+inc}–${maxV+inc}/min`:`${minV+inc}–${maxV+inc}`;
-}
+export { criteriaForBlock, masteryCriteriaForBlock, masteryCriteriaForBlock as variantMasteryCriteria, progressionGateForBlock, progressionSpecForBlock, nextTargetFromSpec } from "./progressionRegistry";
 
 /** Compare the prescription snapshot, not just the exercise name. */
 export function isSamePrescription(a:CoachingLogRecord,b:CoachingLogRecord):boolean{

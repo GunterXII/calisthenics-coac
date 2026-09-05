@@ -33,7 +33,8 @@
     "test:phase21": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/productionCoach.phase21.test.ts",
     "test:phase9-methods": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/methodAware.phase9.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/methodAware.coaching.phase9.test.ts",
     "test:phase10-static": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/staticSkill.phase10.test.ts",
-    "test:phase11-plateau": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/plateau.phase11.test.ts"
+    "test:phase11-plateau": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/plateau.phase11.test.ts",
+    "test:phase12-single-source": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/singleSource.phase12.test.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
