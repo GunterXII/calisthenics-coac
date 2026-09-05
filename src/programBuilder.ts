@@ -1,6 +1,7 @@
 import type { DayKey, DayProgram, ExerciseBlock, GoalId, PhasePlan, TrainingPriority, TrainingRole } from './types';
 import { PROGRAM } from './program';
 import { daysForPhaseFocus, phasePlanFor } from './periodizationEngine';
+import { progressionEntryForBlock } from './progressionRegistry';
 
 export interface ProgramBuildInput {
   phase: PhasePlan;
@@ -146,6 +147,8 @@ function transformBlock(block:ExerciseBlock, input:ProgramBuildInput):ExerciseBl
   else if(goalBlock) detailParts.push('Phase-priority exposure');
   out.detail=detailParts.join(' · ');
 
+  const progressionEntry=progressionEntryForBlock(out as ExerciseBlock);
+  if(progressionEntry) out.progressionSpecId=block.progressionSpecId || block.id;
   return out as ExerciseBlock;
 }
 
