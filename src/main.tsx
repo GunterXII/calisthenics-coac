@@ -169,6 +169,8 @@ function prescriptionSnapshot(block:ExerciseBlock, todayTarget?:number):Prescrip
    bandOptions:block.bandOptions,
    defaultBand:block.defaultBand,
    progressionMode:profile.progressionMode,
+   trainingMethod:block.trainingMethod,
+   densityProtocol:block.densityProtocol,
    fatigueCost:profile.fatigueCost,
    muscleGroups:profile.muscleGroups,
    effectiveSetWeight:profile.effectiveSetWeight,
