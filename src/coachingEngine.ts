@@ -312,7 +312,9 @@ export function progressionSpecForBlock(block:ExerciseBlock,nextVariantId?:strin
 export function nextTargetFromSpec(currentTarget:string,spec:import("./types").ProgressionSpec,kind:ExerciseBlock["kind"]):string{
   const m=currentTarget.match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);if(!m)return currentTarget;
   const minV=Number(m[1]),maxV=Number(m[2]),inc=spec.targetProgression.maxIncrement??1;
-  return kind==="EMOM"?`${minV+inc}–${maxV+inc}/min`:`${minV+inc}–${maxV+inc}${currentTarget.toLowerCase().includes("sec")?" sec":""}`;
+  const isSeconds=currentTarget.toLowerCase().includes("sec")||kind==="SKILL_STATIC";
+  if(isSeconds)return `${minV}–${maxV+inc} sec`;
+  return kind==="EMOM"?`${minV+inc}–${maxV+inc}/min`:`${minV+inc}–${maxV+inc}`;
 }
 
 /** Compare the prescription snapshot, not just the exercise name. */
