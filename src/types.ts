@@ -117,6 +117,7 @@ export interface ProgressionSpec {
 export type TrainingMethod = "STANDARD_SETS"|"DENSITY_5X70"|"EMOM"|"LONG_SET"|"SKILL_STRENGTH"|"STATIC_HOLD";
 export interface DensityProtocol {
   referenceMaxFraction:number;
+  referenceExerciseId?:string;
   referenceMaxReps?:number;
   fixedSets:number;
   initialRestSec:number;

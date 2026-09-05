@@ -98,7 +98,10 @@ function transformBlock(block:ExerciseBlock, input:ProgramBuildInput):ExerciseBl
   // Hypertrophy is a protected, low-noise baseline. We vary it only modestly so
   // it remains present across every phase.
   if(block.trainingRole==='hypertrophy'){
-    let multiplier=phase.volumeMultiplier*wave;
+    if(block.trainingMethod==='DENSITY_5X70' && block.densityProtocol){
+      out.sets=block.densityProtocol.fixedSets;
+    } else {
+      let multiplier=phase.volumeMultiplier*wave;
     if(deload) multiplier=0.55;
     if(realization) multiplier=0.65;
     if(block.sets){
@@ -107,8 +110,9 @@ function transformBlock(block:ExerciseBlock, input:ProgramBuildInput):ExerciseBl
       out.sets=Math.max(1,out.sets);
     }
     if(phase.type==='OAP_EMPHASIS'||phase.type==='FL_EMPHASIS') nextPriority=block.priority==='primary'?'secondary':block.priority;
-    if(realization && block.priority==='primary') nextPriority='support';
-    // Keep normal hypertrophy ranges stable; use the wave primarily through set count.
+      if(realization && block.priority==='primary') nextPriority='support';
+      // Keep normal hypertrophy ranges stable; use the wave primarily through set count.
+    }
   }
 
   // Endurance emphasis gets its progression through duration/density rather than

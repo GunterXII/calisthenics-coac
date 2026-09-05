@@ -760,45 +760,13 @@ export function criteriaForBlock(block:ExerciseBlock):ProgressionCriteria {
   if(block.id==="touch"||block.id==="front-lever-touch") return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
   if(block.id==="oap") return {type:"reps",minSets:Math.min(3,sets),minReps:2,minRir:2,requireClean:false,consecutiveSessions:2,side:"both",minQualifyingRepsPerSide:2};
   if(block.kind==="SKILL_STATIC") return {type:"seconds",minHolds:sets,minSeconds:upper,minRir:1,requireClean:true,consecutiveSessions:2};
+  if(block.progressionMode==="hypertrophy_reps"){
+    return {type:"reps",minSets:Math.min(3,sets),minReps:Math.max(1,target.max||1),minRir:1,requireClean:false,consecutiveSessions:2};
+  }
   if(block.kind==="EMOM"){
-  const minPerMinute=Math.max(1,Math.floor(target.min||upper));
-
-  return {
-    type:"emom",
-    minutes:Math.max(1,block.minutes||10),
-    minPerMinute,
-    maxDropoffPct:15,
-    maxCvPct:20,
-    minLastVsFirstPct:85,
-    consecutiveSessions:2,
-    minRir:block.id.includes("dips")?2:undefined
-  };
-}
-
-if(block.progressionMode==="hypertrophy_reps"){
-  return {
-    type:"reps",
-    minSets:Math.min(3,sets),
-    minReps:Math.max(1,target.max||1),
-    minRir:1,
-    requireClean:false,
-    consecutiveSessions:2
-  };
-}
-
-return {
-  type:"reps",
-  minSets:sets,
-  minReps:upper,
-  minRir:
-    entry?.rule.includes("RIR 1")||
-    entry?.rule.includes("RIR ≥1")||
-    entry?.rule.includes("RIR 1–2")
-      ?1
-      :undefined,
-  requireClean:false,
-  consecutiveSessions:2
-};
+    const minPerMinute=Math.max(1,Math.floor(target.min||upper));
+    return {type:"emom",minutes:Math.max(1,block.minutes||10),minPerMinute,maxDropoffPct:15,maxCvPct:20,minLastVsFirstPct:85,consecutiveSessions:2,minRir:block.id.includes("dips")?2:undefined};
+  }
   return {type:"reps",minSets:sets,minReps:upper,minRir:entry?.rule.includes("RIR 1")||entry?.rule.includes("RIR ≥1")||entry?.rule.includes("RIR 1–2")?1:undefined,requireClean:false,consecutiveSessions:2};
 }
 
@@ -809,7 +777,7 @@ export function masteryCriteriaForBlock(block:ExerciseBlock):ProgressionCriteria
   const target=parseTarget(block.target);
   if(block.id==="oap") return {type:"reps",minSets:Math.min(3,sets),minReps:2,minRir:1,requireClean:false,consecutiveSessions:3,side:"both",minQualifyingRepsPerSide:2};
   if(block.id==="flpu") return {type:"reps",minSets:Math.min(3,sets),minReps:Math.max(1,target.max-1),minRir:1,requireClean:true,consecutiveSessions:3};
-  if(block.id==="touch"||block.id==="front-lever-touch") return {type:"seconds",minHolds:Math.min(3,sets),minSeconds:8,minRir:1,requireClean:true,consecutiveSessions:3};
+  if(block.id==="touch"||block.id==="front-lever-touch") return {type:"seconds",minHolds:Math.min(3,sets),minSeconds:Math.min(8,target.max||4),minRir:1,requireClean:true,consecutiveSessions:3};
   if(block.kind==="EMOM") return {type:"emom",minutes:Math.max(1,Math.min(block.minutes||10,15)),minPerMinute:Math.max(1,target.min||1),maxDropoffPct:15,maxCvPct:20,minLastVsFirstPct:85,consecutiveSessions:3};
   if(block.progressionMode==="hypertrophy_reps") return {type:"reps",minSets:Math.min(3,sets),minReps:Math.max(1,target.max||1),minRir:1,requireClean:false,consecutiveSessions:2};
   return criteriaForBlock(block);

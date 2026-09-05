@@ -8,8 +8,11 @@ const w1 = buildPeriodizedDay({ phase: phasePlanFor('ACCUMULATION',1), day:'Mond
 const w2 = buildPeriodizedDay({ phase: phasePlanFor('ACCUMULATION',2), day:'Monday', goals:['oap','flpu','front_lever_touch','pushups','dips'] });
 const w4 = buildPeriodizedDay({ phase: phasePlanFor('ACCUMULATION',4), day:'Monday', goals:['oap','flpu','front_lever_touch','pushups','dips'] });
 assert.equal(baseMonday.blocks.length, w1.blocks.length);
-assert.notEqual(w1.blocks[1].sets, w2.blocks[1].sets, 'weekly wave must change hypertrophy prescription');
-assert.ok((w4.blocks[1].sets||0) < (w2.blocks[1].sets||0), 'week 4 should unload volume');
+const hypertrophyIndex=baseMonday.blocks.findIndex(b=>b.id==='lat-a');
+assert.notEqual(w1.blocks[hypertrophyIndex].sets, w2.blocks[hypertrophyIndex].sets, 'weekly wave must change normal hypertrophy prescription');
+assert.ok((w4.blocks[hypertrophyIndex].sets||0) < (w2.blocks[hypertrophyIndex].sets||0), 'week 4 should unload normal hypertrophy volume');
+assert.equal(w1.blocks[1].sets,5,'density blocks keep their fixed five-set dose');
+assert.equal(w2.blocks[1].sets,5,'density blocks keep their fixed five-set dose');
 
 const oap = buildPeriodizedDay({ phase: phasePlanFor('OAP_EMPHASIS',1), day:'Thursday', goals:['oap'] });
 const oapBlock = oap.blocks.find(b=>b.id==='oap')!;
