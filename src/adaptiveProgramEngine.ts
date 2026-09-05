@@ -1,4 +1,4 @@
-import type {DayKey, DayProgram, ExerciseBlock, PhasePlan, SessionSummary, MuscleGroup, WorkoutLog} from './types';
+import type {DayKey, DayProgram, ExerciseBlock, PhasePlan, SessionSummary, WorkoutLog} from './types';
 import {analyzeReadiness} from './coachingEngine';
 import {trainingProfileForBlock} from './trainingModel';
 import {recoveryForMuscle, weeklyWorkload} from './workloadEngine';
@@ -100,98 +100,97 @@ function capSets(block:ExerciseBlock){
   return 4;
 }
 
-function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSummary[], now:number):AdaptiveBlockDecision {
-  const report = weeklyWorkload(sessions, now);
-  const profile = trainingProfileForBlock(block);
-  const performance = previousPerformance(block, sessions, now);
-  const readiness = readinessTrend(sessions, now);
-  const worst = muscleRecoveryFor(block, sessions, now);
-  const lowRecovery = Boolean(worst && worst.recoveryPct < 60);
-  const highFatigue = report.overallRecovery === 'HIGH_FATIGUE' || report.totalFatigueLoad > phase.fatigueBudget * 1.10;
-  const fresh = report.overallRecovery === 'FRESH' && readiness >= 75 && !lowRecovery;
-
-  if (highFatigue && (profile.priority !== 'primary' || !isPrimarySkill(block))) {
-    if (block.trainingMethod === 'DENSITY_5X70') return {exerciseId:block.id,action:'HOLD_DENSITY',setsDelta:0,minutesDelta:0,reason:'Recent workload is high; keep the fixed density dose and do not shorten recovery until readiness improves.',confidence:0.92};
-    if (block.kind === 'EMOM' || isEndurance(block)) return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent workload is high; reduce low-priority density before cutting primary skill work.',confidence:0.90};
-    if (block.sets && block.sets > 1) return {exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Recent workload/recovery is high; reduce lower-priority volume.',confidence:0.90};
-  }
-
-  if (lowRecovery && isPrimarySkill(block)) {
-    return {exerciseId:block.id,action:'PROTECT',setsDelta:0,minutesDelta:0,reason:`${worst!.muscle} recovery is ${Math.round(worst!.recoveryPct)}%; protect skill quality and do not add volume.`,confidence:0.92};
-  }
-
-  if (!performance.known) return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'No comparable completed exposure yet; establish a clean baseline before adapting volume.',confidence:0.86};
-
-  if (performance.low) {
-    if (isPrimarySkill(block)) return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; keep the skill exposure stable and avoid adding fatigue.',confidence:0.86};
-    if (block.trainingMethod === 'DENSITY_5X70') return {exerciseId:block.id,action:'HOLD_DENSITY',setsDelta:0,minutesDelta:0,reason:'Recent density output is below target; keep the fixed dose and do not shorten recovery until performance stabilizes.',confidence:0.86};
-    if (block.kind === 'EMOM' || isEndurance(block)) return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent endurance output is below target; reduce density slightly instead of pushing failure.',confidence:0.84};
-    return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; repeat the prescription and rebuild quality.',confidence:0.84};
-  }
-
-  if (fresh && performance.atUpper && performance.stable) {
-    if (phase.type === 'ENDURANCE_EMPHASIS' && (block.kind === 'EMOM' || isEndurance(block))) {
-      const maxMinutes = clamp((block.minutes || 10) + 1, 5, 15);
-      return {exerciseId:block.id,action:'ADD_DENSITY',setsDelta:0,minutesDelta:maxMinutes - (block.minutes || 0),reason:'Output is stable at the top of the target with adequate recovery; add one minute of sustainable density.',confidence:0.91};
-    }
-    if (block.trainingMethod !== 'DENSITY_5X70' && block.trainingRole === 'hypertrophy' && block.sets && block.sets < capSets(block)) {
-      // Protect the phase budget: only add a set to hypertrophy when recovery is good.
-      return {exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Top of the rep range is repeatable with good recovery; add one productive hypertrophy set.',confidence:0.89};
-    }
-    if ((block.trainingRole === 'strength' || block.trainingRole === 'skill') && block.sets && block.sets < capSets(block) && phase.type !== 'REALIZATION') {
-      return {exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Performance is stable at the top of the target with adequate recovery; add one high-quality exposure.',confidence:0.88};
-    }
-  }
-
-  // Hypertrophy floor safeguard: if a target muscle is lightly loaded, prefer adding
-  // volume to a hypertrophy block rather than increasing fatigue-heavy skill work.
-  if (block.trainingMethod !== 'DENSITY_5X70' && block.trainingRole === 'hypertrophy' && block.sets && block.sets < capSets(block)) {
-    const thinMuscle = (profile.muscleGroups || []).find(m => report.muscles[m]?.adjustedSets < 6);
-    if (thinMuscle && fresh) {
-      return {exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:`${thinMuscle.replace(/_/g,' ')} is below the conservative hypertrophy floor; add one productive set.`,confidence:0.87};
-    }
-  }
-
-  return {exerciseId:block.id,action:'NONE',setsDelta:0,minutesDelta:0,reason:'Current workload, recovery and performance support keeping the prescription unchanged.',confidence:0.80};
+/**
+ * V22.10: high fatigue is allocated, not broadcast.
+ * A session gets a small reduction budget and only the lowest-priority candidates
+ * can spend it. Primary skills, primary performance blocks and fixed density doses are protected.
+ */
+function fatigueReductionBudget(report:ReturnType<typeof weeklyWorkload>,phase:PhasePlan){
+  const ratio=phase.fatigueBudget>0?report.totalFatigueLoad/phase.fatigueBudget:Infinity;
+  if(report.overallRecovery==='HIGH_FATIGUE'||ratio>=1.25)return 3;
+  if(report.overallRecovery==='FATIGUED'||ratio>1.10)return 2;
+  return 0;
+}
+function reductionTier(block:ExerciseBlock):number{
+  if(block.trainingMethod==='DENSITY_5X70'||isPrimarySkill(block))return 99;
+  if(block.priority==='support')return 0;
+  if(block.priority==='secondary')return 1;
+  if(block.kind==='EMOM'||isEndurance(block))return 2;
+  return 99;
+}
+function reductionScore(block:ExerciseBlock,sessions:SessionSummary[],now:number){
+  const profile=trainingProfileForBlock(block);
+  const worst=muscleRecoveryFor(block,sessions,now);
+  const performance=previousPerformance(block,sessions,now);
+  return reductionTier(block)*100+profile.fatigueCost*8+(worst?100-worst.recoveryPct:0)+(performance.low?20:0);
+}
+function selectFatigueReductions(blocks:ExerciseBlock[],sessions:SessionSummary[],now:number,budget:number){
+  if(budget<=0)return new Set<string>();
+  const candidates=blocks.filter(b=>reductionTier(b)<99&&((b.sets??0)>1||b.kind==='EMOM'));
+  candidates.sort((a,b)=>reductionScore(a,sessions,now)-reductionScore(b,sessions,now));
+  return new Set(candidates.slice(0,budget).map(b=>b.id));
 }
 
-export function buildAdaptivePeriodizedDay(phase:PhasePlan, day:DayKey, goals:import('./types').GoalId[]|undefined, sessions:SessionSummary[], now=Date.now()):AdaptiveDayPlan {
-  const base = buildPeriodizedDay({phase, day, goals});
-  const resolvedBase = {...base, blocks:base.blocks.map(block => resolveDensityBlock(block, sessions))};
-  const decisions:AdaptiveBlockDecision[] = resolvedBase.blocks.map(block => adjustBlock(block, phase, sessions, now));
-  const blocks = resolvedBase.blocks.map(block => {
-    const decision = decisions.find(d => d.exerciseId === block.id)!;
-    const next = {...block};
-    if (typeof next.sets === 'number') {
-      next.sets = next.trainingMethod === 'DENSITY_5X70' && next.densityProtocol
-        ? next.densityProtocol.fixedSets
-        : Math.max(1, next.sets + decision.setsDelta);
+function adjustBlock(block:ExerciseBlock,phase:PhasePlan,sessions:SessionSummary[],now:number,selectedForFatigue:boolean):AdaptiveBlockDecision{
+  const report=weeklyWorkload(sessions,now);
+  const profile=trainingProfileForBlock(block);
+  const performance=previousPerformance(block,sessions,now);
+  const readiness=readinessTrend(sessions,now);
+  const worst=muscleRecoveryFor(block,sessions,now);
+  const lowRecovery=Boolean(worst&&worst.recoveryPct<60);
+  const highFatigue=fatigueReductionBudget(report,phase)>0;
+  const fresh=report.overallRecovery==='FRESH'&&readiness>=75&&!lowRecovery;
+
+  if(highFatigue&&selectedForFatigue){
+    if(block.trainingMethod==='DENSITY_5X70')return{exerciseId:block.id,action:'HOLD_DENSITY',setsDelta:0,minutesDelta:0,reason:'Fatigue is elevated; protect the fixed density dose and keep recovery unchanged.',confidence:.94};
+    if(block.kind==='EMOM'||isEndurance(block))return{exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Fatigue is elevated; reduce one low-priority density exposure before touching higher-priority work.',confidence:.92};
+    return{exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Fatigue is elevated; remove one set from a lower-priority block while preserving higher-priority work.',confidence:.92};
+  }
+
+  if(lowRecovery&&isPrimarySkill(block))return{exerciseId:block.id,action:'PROTECT',setsDelta:0,minutesDelta:0,reason:`${worst!.muscle} recovery is ${Math.round(worst!.recoveryPct)}%; protect skill quality and do not add volume.`,confidence:.94};
+  if(!performance.known)return{exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'No comparable completed exposure yet; establish a clean baseline before adapting volume.',confidence:.86};
+  if(performance.low){
+    if(isPrimarySkill(block))return{exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; keep the skill exposure stable and avoid adding fatigue.',confidence:.86};
+    if(block.trainingMethod==='DENSITY_5X70')return{exerciseId:block.id,action:'HOLD_DENSITY',setsDelta:0,minutesDelta:0,reason:'Recent density output is below target; keep the fixed dose and recovery unchanged.',confidence:.86};
+    if(block.kind==='EMOM'||isEndurance(block))return{exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent endurance output is below target; reduce density slightly instead of pushing failure.',confidence:.84};
+    return{exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; repeat the prescription and rebuild quality.',confidence:.84};
+  }
+  if(fresh&&performance.atUpper&&performance.stable){
+    if(phase.type==='ENDURANCE_EMPHASIS'&&(block.kind==='EMOM'||isEndurance(block))){const maxMinutes=clamp((block.minutes||10)+1,5,15);return{exerciseId:block.id,action:'ADD_DENSITY',setsDelta:0,minutesDelta:maxMinutes-(block.minutes||0),reason:'Output is stable at the top of the target with adequate recovery; add one minute of sustainable density.',confidence:.91};}
+    if(block.trainingMethod!=='DENSITY_5X70'&&block.trainingRole==='hypertrophy'&&block.sets&&block.sets<capSets(block))return{exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Top of the rep range is repeatable with good recovery; add one productive hypertrophy set.',confidence:.89};
+    if((block.trainingRole==='strength'||block.trainingRole==='skill')&&block.sets&&block.sets<capSets(block)&&phase.type!=='REALIZATION')return{exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Performance is stable at the top of the target with adequate recovery; add one high-quality exposure.',confidence:.88};
+  }
+  if(block.trainingMethod!=='DENSITY_5X70'&&block.trainingRole==='hypertrophy'&&block.sets&&block.sets<capSets(block)){
+    const thinMuscle=(profile.muscleGroups||[]).find(m=>report.muscles[m]?.adjustedSets<6);
+    if(thinMuscle&&fresh)return{exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:`${thinMuscle.replace(/_/g,' ')} is below the conservative hypertrophy floor; add one productive set.`,confidence:.87};
+  }
+  return{exerciseId:block.id,action:'NONE',setsDelta:0,minutesDelta:0,reason:'Current workload, recovery and performance support keeping the prescription unchanged.',confidence:.80};
+}
+
+export function buildAdaptivePeriodizedDay(phase:PhasePlan,day:DayKey,goals:import('./types').GoalId[]|undefined,sessions:SessionSummary[],now=Date.now()):AdaptiveDayPlan{
+  const base=buildPeriodizedDay({phase,day,goals});
+  const resolvedBase={...base,blocks:base.blocks.map(block=>resolveDensityBlock(block,sessions))};
+  const report=weeklyWorkload(sessions,now);
+  const reductionBudget=fatigueReductionBudget(report,phase);
+  const selected=selectFatigueReductions(resolvedBase.blocks,sessions,now,reductionBudget);
+  const decisions=resolvedBase.blocks.map(block=>adjustBlock(block,phase,sessions,now,selected.has(block.id)));
+  const blocks=resolvedBase.blocks.map(block=>{
+    const decision=decisions.find(d=>d.exerciseId===block.id)!;
+    const next={...block};
+    if(typeof next.sets==='number'){
+      next.sets=next.trainingMethod==='DENSITY_5X70'&&next.densityProtocol?next.densityProtocol.fixedSets:Math.max(1,next.sets+decision.setsDelta);
     }
-    if (typeof next.minutes === 'number') next.minutes = Math.max(5, next.minutes + decision.minutesDelta);
-    const detail = stripPrescriptionPrefix(next.detail);
-    const actionLabel = decision.action === 'HOLD_DENSITY'
-      ? 'Mantieni la densità · recupero invariato'
-      : decision.action === 'REDUCE_DENSITY' && next.kind === 'EMOM'
-        ? `Densità ridotta oggi · ${next.minutes ?? 0} min`
-        : decision.action === 'REDUCE_DENSITY'
-          ? 'Densità ridotta oggi'
-          : decision.action === 'REDUCE_VOLUME'
-            ? `Volume ridotto oggi · ${next.sets ?? 0} set`
-            : decision.action === 'ADD_VOLUME'
-              ? `Volume aumentato · ${next.sets ?? 0} set`
-              : decision.action === 'ADD_DENSITY'
-                ? `Densità aumentata · ${next.minutes ?? 0} min`
-                : decision.action === 'PROTECT'
-                  ? 'Proteggi la qualità · nessun aumento'
-                  : decision.action === 'HOLD'
-                    ? 'Mantieni la prescrizione'
-                    : decision.action === 'NONE'
-                      ? 'Mantieni la prescrizione'
-                      : decision.action;
-    next.detail = detail;
-    next.coachNote = actionLabel;
+    if(typeof next.minutes==='number')next.minutes=Math.max(5,next.minutes+decision.minutesDelta);
+    next.detail=stripPrescriptionPrefix(next.detail);
+    next.coachNote=decision.action==='HOLD_DENSITY'?'Mantieni la densità · recupero invariato'
+      :decision.action==='REDUCE_DENSITY'&&next.kind==='EMOM'?`Densità ridotta oggi · ${next.minutes??0} min`
+      :decision.action==='REDUCE_DENSITY'?'Densità ridotta oggi'
+      :decision.action==='REDUCE_VOLUME'?`Volume ridotto oggi · ${next.sets??0} set`
+      :decision.action==='ADD_VOLUME'?`Volume aumentato · ${next.sets??0} set`
+      :decision.action==='ADD_DENSITY'?`Densità aumentata · ${next.minutes??0} min`
+      :decision.action==='PROTECT'?'Proteggi la qualità · nessun aumento'
+      :'Mantieni la prescrizione';
     return next;
   });
-  const report = weeklyWorkload(sessions, now);
-  return {day, program:{...base, blocks}, decisions, weeklyFatigue:round(report.totalFatigueLoad), overallRecovery:report.overallRecovery};
+  return{day,program:{...base,blocks},decisions,weeklyFatigue:round(report.totalFatigueLoad),overallRecovery:report.overallRecovery};
 }
