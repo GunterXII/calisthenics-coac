@@ -7,6 +7,7 @@ import {
   progressionSpecForBlock,
   parseTargetRange,
 } from "./coachingEngine";
+import {proposeDensityRestProgression} from "./methodAwareCoaching";
 
 export type CoachAction = "PROGRESS"|"HOLD"|"REGRESS"|"REDUCE_VOLUME"|"REVIEW";
 
@@ -171,7 +172,11 @@ export function runCoachCore(input:CoachCoreInput):CoachCoreResult{
     let action:CoachAction=evaluation.decision;
     let proposal:CoachExerciseAnalysis["proposal"];
 
-    if(evaluation.decision==="PROGRESS"){
+    if(block.trainingMethod==="DENSITY_5X70"){
+      const densityProposal=proposeDensityRestProgression(block,log,flattenLogs(input.history));
+      if(densityProposal){proposal=densityProposal;}
+      else if(evaluation.decision==="REGRESS"||evaluation.decision==="REDUCE_VOLUME"){proposal=makeRecoveryProposal(block,log,evaluation.decision,evaluation.confidence,reasons);}
+    }else if(evaluation.decision==="PROGRESS"){
       if(streak>=required){
         proposal=makeProgressProposal(block,log,{streak,required,confidence:evaluation.confidence,reasons});
         if(!proposal){
