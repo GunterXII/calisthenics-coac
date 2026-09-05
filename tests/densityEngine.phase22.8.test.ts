@@ -25,6 +25,7 @@ assert.equal(densityTargetReps(pushDensity,empty),28);
 assert.equal(resolveDensityPrescription(pushDensity,empty).sets,5);
 assert.equal(resolveDensityPrescription(pushDensity,empty).target,"28–28");
 assert.equal(resolveDensityPrescription(pushDensity,empty).rest,120);
+assert.equal(resolveDensityPrescription(pushDensity,empty).detail,"5 × 70% del massimale (28–28 reps) · dose fissa · riduci il recupero solo quando la performance è stabile");
 
 const fortyFive=log("long-45",pushLong.id,1000,[45],180);
 const sessions=[{id:"s1",date:1000,day:"Friday",durationSec:300,readiness:{},logs:[fortyFive],totalReps:45,emomReps:0,bestSkillSeconds:0} as SessionSummary];

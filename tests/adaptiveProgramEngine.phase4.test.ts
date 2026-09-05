@@ -21,7 +21,10 @@ assert.equal(plan.program.blocks.find(b=>b.id==='pushup-volume')!.target,'28–2
 const tiredSession = session('s2',now-24*3600000,'Monday',{id:'l2',exerciseId:monday.id,exerciseName:monday.name,kind:monday.kind,status:'complete',prescription:{version:1,exerciseId:monday.id,variantId:monday.id,variantName:monday.name,name:monday.name,kind:monday.kind,targetRange:monday.target,sets:monday.sets,restSec:monday.rest,progressionMode:monday.progressionMode,fatigueCost:monday.fatigueCost,muscleGroups:monday.muscleGroups,effectiveSetWeight:monday.effectiveSetWeight,gripDemand:monday.gripDemand,capturedAt:now-86400000},result:{reps:[8,8,8],rir:0,quality:['Shaky','Shaky','Shaky']}});
 const tiredPlan = buildAdaptivePeriodizedDay(phasePlanFor('ACCUMULATION',2),'Monday',['pushups'],[tiredSession],now);
 const tiredDecision = tiredPlan.decisions.find(d=>d.exerciseId==='pushup-volume')!;
-assert.ok(['HOLD','REDUCE_VOLUME','REDUCE_DENSITY'].includes(tiredDecision.action));
+assert.equal(tiredDecision.action,'HOLD_DENSITY');
+assert.equal(tiredPlan.program.blocks.find(b=>b.id==='pushup-volume')!.sets,5);
+assert.equal(tiredPlan.program.blocks.find(b=>b.id==='pushup-volume')!.detail.includes('5 ×'),false);
+assert.equal(tiredPlan.program.blocks.find(b=>b.id==='pushup-volume')!.coachNote,'Mantieni la densità · recupero invariato');
 
 const endurance = buildAdaptivePeriodizedDay(phasePlanFor('ENDURANCE_EMPHASIS',2),'Friday',['pushups','dips'],[],now);
 assert.ok(endurance.program.blocks.some(b=>b.kind==='EMOM'));
