@@ -30,7 +30,8 @@
     "test:journey": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/athleteJourney.phase19.test.ts && node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/productionCoach.phase21.test.ts",
     "test:phase20": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/workoutFlow.phase20.test.ts",
     "test:phase20production": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/phase20.productionCoach.test.ts",
-    "test:phase21": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/productionCoach.phase21.test.ts"
+    "test:phase21": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/productionCoach.phase21.test.ts",
+    "test:phase9-methods": "node --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs tests/methodAware.phase9.test.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
