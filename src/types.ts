@@ -126,7 +126,7 @@ export interface DensityProtocol {
 }
 export interface ExerciseBlock {
   id:string; catalogExerciseId?:string; kind:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; trainingMethod?:TrainingMethod; densityProtocol?:DensityProtocol; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; name:string; detail:string; sets?:number; minutes?:number;
-  target:string; rest:number; bandOptions?:Band[]; countdown?:boolean;
+  target:string; rest:number; progressionSpecId?:string; bandOptions?:Band[]; countdown?:boolean;
   previousMode?:"reps"|"seconds"|"emom"; microSteps?:readonly MicroStep[];
   defaultBand?:Band; day?:DayKey; sortOrder?:number;
 }
@@ -165,6 +165,7 @@ export interface PrescriptionSnapshot {
   muscleGroups?:MuscleGroup[];
   effectiveSetWeight?:number;
   gripDemand?:"none"|"low"|"moderate"|"high";
+  progressionSpecId?:string;
   capturedAt:number;
 }
 
