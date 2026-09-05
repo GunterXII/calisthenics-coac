@@ -236,6 +236,18 @@ export interface SessionSummary {
 }
 
 export interface ProgramOverride { exerciseId:string; variantId?:string; catalogExerciseId?:string; name?:string; detail?:string; kind?:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; target?:string; sets?:number; rest?:number; minutes?:number; bandOptions?:Band[]; defaultBand?:Band; updatedAt:number; previous?:ProgramOverride|null; }
+
+export interface PlateauSignal {
+  exerciseId:string;
+  variantId:string;
+  exposures:number;
+  metric:string;
+  values:number[];
+  improving:boolean;
+  recommendation:"HOLD"|"CONSIDER_CLUSTER"|"CONSIDER_VARIANT";
+  reason:string;
+}
+
 export interface CoachDecision { id:string; date:number; type:"program"|"progression"|"coach"; exerciseId?:string; title:string; detail:string; from?:string; to?:string; }
 
 export interface CurrentVariantState {
