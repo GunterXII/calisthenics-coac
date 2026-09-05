@@ -114,8 +114,18 @@ export interface ProgressionSpec {
   regression?:string;
   bandMode?:BandMode;
 }
+export type TrainingMethod = "STANDARD_SETS"|"DENSITY_5X70"|"EMOM"|"LONG_SET"|"SKILL_STRENGTH"|"STATIC_HOLD";
+export interface DensityProtocol {
+  referenceMaxFraction:number;
+  fixedSets:number;
+  initialRestSec:number;
+  minRestSec:number;
+  restStepSec:number;
+  maxDropoffPct:number;
+  minRir:number;
+}
 export interface ExerciseBlock {
-  id:string; catalogExerciseId?:string; kind:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; name:string; detail:string; sets?:number; minutes?:number;
+  id:string; catalogExerciseId?:string; kind:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; trainingMethod?:TrainingMethod; densityProtocol?:DensityProtocol; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; name:string; detail:string; sets?:number; minutes?:number;
   target:string; rest:number; bandOptions?:Band[]; countdown?:boolean;
   previousMode?:"reps"|"seconds"|"emom"; microSteps?:readonly MicroStep[];
   defaultBand?:Band; day?:DayKey; sortOrder?:number;
@@ -149,6 +159,8 @@ export interface PrescriptionSnapshot {
   bandOptions?:Band[];
   defaultBand?:Band;
   progressionMode?:ProgressionMode;
+  trainingMethod?:TrainingMethod;
+  densityProtocol?:DensityProtocol;
   fatigueCost?:1|2|3|4|5;
   muscleGroups?:MuscleGroup[];
   effectiveSetWeight?:number;
