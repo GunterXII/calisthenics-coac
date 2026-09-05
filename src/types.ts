@@ -301,7 +301,7 @@ export interface CoachExperiment {
 }
 
 export interface CoachProposal {
-  id:string; date:number; type:"target"|"variant"|"program_review"; exerciseId:string; variantId?:string;
+  id:string; date:number; type:"target"|"variant"|"program_review"|"rest"; exerciseId:string; variantId?:string;
   title:string; detail:string; from:string; to:string; reason:string;
   status:ProposalStatus; sessionId?:string;
   experimentId?:string;
