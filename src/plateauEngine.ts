@@ -12,7 +12,7 @@ function sameExposure(a:WorkoutLog,b:WorkoutLog):boolean{
 }
 
 function metric(log:WorkoutLog):number|undefined{
-  if(log.result.reps?.length)return Math.max(...log.result.reps);
+  if(log.result.reps?.length)return log.result.reps.reduce((a,b)=>a+b,0)/log.result.reps.length;
   if(log.result.seconds?.length)return Math.max(...log.result.seconds);
   return undefined;
 }
@@ -44,7 +44,8 @@ export function detectPlateaus(sessions:SessionSummary[],minExposures=3):Plateau
     const first=nums[0], last=nums[nums.length-1], best=Math.max(...nums);
     const fatigues=recent.map(x=>x.result.fatigue).filter((x):x is number=>typeof x==="number");
     const avgFatigue=fatigues.length?fatigues.reduce((a,b)=>a+b,0)/fatigues.length:0;
-    if(avgFatigue>=4)continue;
+    const latestFatigue=recent[recent.length-1].result.fatigue;
+    if(avgFatigue>=4 || (typeof latestFatigue==='number' && latestFatigue>=4))continue;
     if(last>first||best-first>=1)continue;
     out.push({
       exerciseId,

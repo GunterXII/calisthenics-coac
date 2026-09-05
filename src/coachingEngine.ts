@@ -256,7 +256,24 @@ export function evaluateProgression(block:ExerciseBlock,log:CoachingLogRecord,cr
   if(qualifies)reasons.push(`Qualifies with ${qKnown?`recorded quality ${Math.round((qScore??0)*100)}%`:`no explicit quality requirement`}.`);
   return {qualifies,qualityKnown:qKnown,qualityScore:qScore,stabilityScore,reasons,sidePerformance:side,bodyweightPerformance,performanceBand:exposure.performanceBand,decision:exposure.decision,confidence:exposure.confidence};
 }
+export function progressionStreak(
+  block:ExerciseBlock,
+  logs:CoachingLogRecord[],
+  criteria:ProgressionCriteria
+):number{
+  let streak=0;
+  const required=criteria.consecutiveSessions||1;
 
+  for(let i=logs.length-1;i>=0;i--){
+    const ev=evaluateProgression(block,logs[i],criteria);
+    if(!ev.qualifies)break;
+
+    streak++;
+    if(streak>=required)break;
+  }
+
+  return streak;
+}
 export function referenceWeightFromLogs(logs:CoachingLogRecord[]){
   const weights=logs.map(x=>x.session?.readiness?.weightKg).filter((x):x is number=>typeof x==="number"&&x>0);return weights.length?weights[weights.length-1]:undefined;
 }

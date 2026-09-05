@@ -80,10 +80,27 @@ export function decideExerciseInContext(block: ExerciseBlock, log: WorkoutLog, s
   const comparable = completedComparableLogs(log, sessions);
   const previousComparable = comparable[comparable.length - 1];
   const streak = progressionStreak(block, [...comparable, log].map(x => record(x, sessions.find(s => s.id === x.sessionId))), criteria);
+  const progressionEvaluation = evaluateProgression(
+  block,
+  record(log, session),
+  criteria
+);
   const reasons = [...base.reasons];
   let decision = base.decision;
   let confidence = base.confidence;
+const requiredStreak = Math.max(2, criteria.consecutiveSessions || 2);
 
+if (
+  progressionEvaluation.qualifies &&
+  streak >= requiredStreak &&
+  readiness.allowProgression
+) {
+  decision = "PROGRESS";
+  reasons.push(
+    `Progression gate met: ${streak}/${requiredStreak} consecutive qualifying exposures.`
+  );
+  confidence = Math.max(confidence, 94);
+}
   if (log.status === "skipped" || log.status === "modified") {
     return {
       decision: "REVIEW",
