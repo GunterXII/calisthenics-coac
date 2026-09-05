@@ -1336,9 +1336,10 @@ function proposeTargetProgression(block:ExerciseBlock,log:WorkoutLog,session?:Se
  const decision=decideExposure(block,coachingRecordForLog(log),criteria);
  if(decision.decision!=="PROGRESS")return null;
  const range=parseTargetRange(block.target); if(!range)return null;
+ const isStatic=block.trainingMethod==="STATIC_HOLD"||block.kind==="SKILL_STATIC"||block.previousMode==="seconds";
  const step=block.kind==="EMOM"?1:(range.max>=30?5:1);
- const nextMin=Number((range.min+step).toFixed(1));
- const nextMax=Number((range.max+step).toFixed(1));
+ const nextMin=isStatic?range.min:Number((range.min+step).toFixed(1));
+ const nextMax=Number((range.max+(isStatic?1:step)).toFixed(1));
  const suffix=block.kind==="SKILL_STATIC"?"s":"";
  return {type:"target",exerciseId:block.id,title:"Progress target — "+block.name,detail:"The upper target was reached across "+required+" consecutive comparable exposures with adequate RIR/stability/readiness.",from:block.target,to:nextMin+"–"+nextMax+suffix,reason:required+" consecutive exposures qualified on the same prescription; no progression is based on a single session.",status:"pending",sessionId:log.id};
 }
