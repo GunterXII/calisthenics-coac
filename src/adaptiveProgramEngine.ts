@@ -148,8 +148,9 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
 
 export function buildAdaptivePeriodizedDay(phase:PhasePlan, day:DayKey, goals:import('./types').GoalId[]|undefined, sessions:SessionSummary[], now=Date.now()):AdaptiveDayPlan {
   const base = buildPeriodizedDay({phase, day, goals});
-  const decisions:AdaptiveBlockDecision[] = base.blocks.map(block => adjustBlock(block, phase, sessions, now));
-  const blocks = base.blocks.map(block => {
+  const resolvedBase = {...base, blocks:base.blocks.map(block => resolveDensityBlock(block, sessions))};
+  const decisions:AdaptiveBlockDecision[] = resolvedBase.blocks.map(block => adjustBlock(block, phase, sessions, now));
+  const blocks = resolvedBase.blocks.map(block => {
     const decision = decisions.find(d => d.exerciseId === block.id)!;
     const next = {...block};
     if (typeof next.sets === 'number') next.sets = Math.max(1, next.sets + decision.setsDelta);
