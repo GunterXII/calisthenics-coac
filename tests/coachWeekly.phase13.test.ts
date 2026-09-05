@@ -1,4 +1,3 @@
-
 import assert from "node:assert/strict";
 import { buildCoachWeeklyReport, formatCoachWeeklyReport } from "../src/coachWeeklyIntelligence.ts";
 import { defaultPeriodizationCycle, phaseForCycleWeek } from "../src/periodizationEngine.ts";
@@ -16,7 +15,7 @@ function log(id:string,date:number,reps:number[],rir=2,fatigue=3):WorkoutLog{
 const start=10*86400000;
 const sessions:SessionSummary[]=Array.from({length:5},(_,i)=>({
   id:"s"+i,date:start+i*86400000+3600000,day:"Thursday",durationSec:3000,
-  readiness:{sleepHours:8,energy:4},logs:[log("l"+i,start+i*86400000+3600000,i<4?[1,2,1,1,1,1]:[1,2,2,2,1,2])],
+  readiness:{sleepHours:8,energy:4},logs:[log("l"+i,start+i*86400000+3600000,i<4?[1,1,1,1,1,1]:[1,2,2,2,2,2])],
   totalReps:7,emomReps:0,bestSkillSeconds:0
 }));
 
