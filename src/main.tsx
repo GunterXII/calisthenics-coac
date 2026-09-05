@@ -1324,7 +1324,7 @@ function StaticSkill({block,day,onComplete,onStarted,sound,vibration,existing,on
 
 function parseTargetRange(target:string){const m=String(target||"").match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);if(!m)return null;return{min:Number(m[1]),max:Number(m[2])};}
 function proposeTargetProgression(block:ExerciseBlock,log:WorkoutLog,session?:SessionSummary):Omit<CoachProposal,"id"|"date">|null{
- if(log.status!=="complete")return null;
+ if(log.status!=="complete"||block.trainingMethod==="DENSITY_5X70")return null;
  const criteria=criteriaForBlock(block);
  const history=currentVariantLogs(block).filter(x=>x.date<=log.date);
  const required=Math.max(2,criteria.consecutiveSessions||2);
@@ -1339,9 +1339,29 @@ function proposeTargetProgression(block:ExerciseBlock,log:WorkoutLog,session?:Se
  const nextMin=Number((range.min+step).toFixed(1));
  const nextMax=Number((range.max+step).toFixed(1));
  const suffix=block.kind==="SKILL_STATIC"?"s":"";
- return {type:"target",exerciseId:block.id,title:`Progress target — ${block.name}`,detail:`The upper target was reached across ${required} consecutive comparable exposures with adequate RIR/stability/readiness.`,from:block.target,to:`${nextMin}–${nextMax}${suffix}`,reason:`${required} consecutive exposures qualified on the same prescription; no progression is based on a single session.`,status:"pending",sessionId:log.id};
+ return {type:"target",exerciseId:block.id,title:"Progress target — "+block.name,detail:"The upper target was reached across "+required+" consecutive comparable exposures with adequate RIR/stability/readiness.",from:block.target,to:nextMin+"–"+nextMax+suffix,reason:required+" consecutive exposures qualified on the same prescription; no progression is based on a single session.",status:"pending",sessionId:log.id};
 }
 
+function densityQualifies(log:WorkoutLog,block:ExerciseBlock):boolean{
+ if(block.trainingMethod!=="DENSITY_5X70"||log.status!=="complete")return false;
+ const target=Number(log.prescription?.targetRange||block.target), values=log.result.reps||[];
+ if(!Number.isFinite(target)||target<=0||values.length<(block.densityProtocol?.fixedSets||5))return false;
+ const first=values[0]||0,last=values[values.length-1]||0,minValue=Math.min(...values),dropoff=first>0?((first-last)/first)*100:100;
+ const rir=log.result.rir,fatigue=log.result.fatigue;
+ return minValue>=target*0.90 && dropoff<=(block.densityProtocol?.maxDropoffPct||15) && (rir===undefined||rir>=(block.densityProtocol?.minRir||1)) && (fatigue===undefined||fatigue<=3);
+}
+
+function proposeDensityRestProgression(block:ExerciseBlock,log:WorkoutLog):Omit<CoachProposal,"id"|"date">|null{
+ if(block.trainingMethod!=="DENSITY_5X70"||log.status!=="complete"||!block.densityProtocol)return null;
+ const history=getLogs().filter(x=>x.exerciseId===block.id&&x.status==="complete"&&!x.skipped).sort((a,b)=>a.date-b.date);
+ const same=(x:WorkoutLog)=>String(x.variantId||x.exerciseId)===String(log.variantId||log.exerciseId)&&String(x.prescription?.targetRange||"")===String(log.prescription?.targetRange||"")&&(x.prescription?.sets??null)===(log.prescription?.sets??null)&&(x.prescription?.restSec??null)===(log.prescription?.restSec??null)&&(x.prescription?.kind??"")===(log.prescription?.kind??"")&&String(x.result.band||"")===String(log.result.band||"");
+ const prior=history.filter(same), recent=[...prior.slice(-1),log];
+ const unique=recent.filter((x,i,a)=>i===0||x.id!==a[i-1].id);
+ if(unique.length<2||!unique.every(x=>densityQualifies(x,block)))return null;
+ const currentRest=log.prescription?.restSec??block.rest,nextRest=Math.max(block.densityProtocol.minRestSec,currentRest-block.densityProtocol.restStepSec);
+ if(nextRest>=currentRest)return null;
+ return {type:"rest",exerciseId:block.id,title:"Riduci recupero — "+block.name,detail:"Due esposizioni comparabili hanno sostenuto la stessa dose. Riduci il recupero di "+block.densityProtocol.restStepSec+"s senza aumentare le reps.",from:currentRest+"s",to:nextRest+"s",reason:"La densità è la variabile di progressione: target stabile, drop-off e RIR entro i limiti.",status:"pending",sessionId:log.id};
+}
 function CoachProposalPanel({session}:{session:SessionSummary}){
  const [items,setItems]=useState<CoachProposal[]>(()=>getCoachProposals().filter(p=>p.sessionId===session.id));
  const [message,setMessage]=useState("");
@@ -1353,6 +1373,8 @@ function CoachProposalPanel({session}:{session:SessionSummary}){
      if(!block||log.status!=="complete")continue;
      const targetProposal=proposeTargetProgression(block,log,session);
      if(targetProposal&&!current.some(p=>p.sessionId===targetProposal.sessionId&&p.exerciseId===targetProposal.exerciseId&&p.type===targetProposal.type&&p.to===targetProposal.to))saveCoachProposal(targetProposal);
+     const densityProposal=proposeDensityRestProgression(block,log);
+     if(densityProposal&&!current.some(p=>p.sessionId===densityProposal.sessionId&&p.exerciseId===densityProposal.exerciseId&&p.type===densityProposal.type&&p.to===densityProposal.to))saveCoachProposal(densityProposal);
      const currentName=currentVariantFor(block.id,PROGRESSIONS[block.id]?.current||block.name);
      const currentVariant=getVariant(block.id);
      const currentVariantId=currentVariant?.variantId||block.id;
@@ -1392,7 +1414,8 @@ function CoachProposalPanel({session}:{session:SessionSummary}){
      nextVariantId=p.variantId||ladder[index]?.id||p.to;
      variantState={exerciseId:block.id,variantId:nextVariantId,variantName:p.to,step:index,status:"promoted",updatedAt:Date.now(),lastCoachAction:"promote"};
    }
-   const override={exerciseId:block.id,variantId:nextVariantId,catalogExerciseId:block.catalogExerciseId,name:p.type==="variant"?p.to:block.name,kind:block.kind,target:p.type==="target"?p.to:block.target,sets:block.sets,rest:block.rest,minutes:block.minutes,bandOptions:block.bandOptions,defaultBand:block.defaultBand,updatedAt:Date.now(),previous};
+   const nextRest=p.type==="rest"?Number(String(p.to).replace(/\D/g,"")):block.rest;
+   const override={exerciseId:block.id,variantId:nextVariantId,catalogExerciseId:block.catalogExerciseId,name:p.type==="variant"?p.to:block.name,kind:block.kind,target:p.type==="target"?p.to:block.target,sets:block.sets,rest:nextRest,minutes:block.minutes,bandOptions:block.bandOptions,defaultBand:block.defaultBand,updatedAt:Date.now(),previous};
    const accepted=acceptCoachProposalAtomically(p.id,override,variantState,{type:p.type==="variant"?"progression":"program",exerciseId:p.exerciseId,title:`Proposal accepted — ${p.title}`,detail:`${p.reason} Applied to future sessions.`,from:p.from,to:p.to});
    if(accepted.changed){
      try{
