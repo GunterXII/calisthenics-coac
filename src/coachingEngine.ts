@@ -261,7 +261,7 @@ export function referenceWeightFromLogs(logs:CoachingLogRecord[]){
   const weights=logs.map(x=>x.session?.readiness?.weightKg).filter((x):x is number=>typeof x==="number"&&x>0);return weights.length?weights[weights.length-1]:undefined;
 }
 
-export { criteriaForBlock, masteryCriteriaForBlock, progressionGateForBlock, progressionSpecForBlock, nextTargetFromSpec } from "./progressionRegistry";
+export { criteriaForBlock, masteryCriteriaForBlock, masteryCriteriaForBlock as variantMasteryCriteria, progressionGateForBlock, progressionSpecForBlock, nextTargetFromSpec } from "./progressionRegistry";
 
 /** Compare the prescription snapshot, not just the exercise name. */
 export function isSamePrescription(a:CoachingLogRecord,b:CoachingLogRecord):boolean{
