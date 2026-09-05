@@ -1,0 +1,13 @@
+Calisthenics Coach V15 — Phase 12/13 validation
+
+Validated locally in the packaged source:
+- npm run test:all -> PASS (all listed regression suites)
+- test:phase10-static -> PASS
+- test:phase11-plateau -> PASS
+- test:phase12-single-source -> PASS
+- test:phase13-weekly-intelligence -> PASS
+- TypeScript compiler (tsc -b) -> PASS
+
+Notes:
+- Vite production bundling was not completed in the Linux validation container because the optional Rollup native package for Linux was unavailable.
+- The source is prepared for a normal Windows `npm install` + `npm run build` environment.

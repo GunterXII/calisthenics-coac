@@ -13,7 +13,17 @@ export function shouldRestAfterSideSet(completedSides:number,totalSides:number,s
 export function totalSessionReps(logs:WorkoutLog[]){
   return logs.reduce((sum,log)=>{
     const canonical=canonicalizeWorkoutLog(log);
-    return sum+canonical.sets.reduce((setSum,set)=>setSum+(set.reps??0),0);
+    const reps=canonical.sets.reduce(
+      (setSum,set)=>setSum+(set.reps??0),0
+    );
+
+    if(reps>0)return sum+reps;
+
+    const emom=Array.isArray(log.result.emom)
+      ? log.result.emom.reduce((setSum,reps)=>setSum+reps,0)
+      : 0;
+
+    return sum+emom;
   },0);
 }
 

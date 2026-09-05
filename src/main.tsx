@@ -30,7 +30,9 @@ import {shouldRestAfterStandardSet,shouldRestAfterSideSet,totalSessionReps} from
 import {CoachPanel} from "./coachAiPanel";
 import {createExperimentFromProposal, reviewActiveExperiments, experimentDecisionLabel, rollbackExperiment} from "./coachExperimentEngine";
 import {dayLabel, phaseLabel, t} from "./i18n";
+import {proposeDensityRestProgression} from "./methodAwareCoaching";
 import {workoutFlowCopy, recommendedEndAction} from "./workoutFlow";
+import {buildCoachWeeklyReport,formatCoachWeeklyReport} from "./coachWeeklyIntelligence";
 import "./styles.css";
 
 const DAYS:DayKey[]=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
@@ -169,6 +171,9 @@ function prescriptionSnapshot(block:ExerciseBlock, todayTarget?:number):Prescrip
    bandOptions:block.bandOptions,
    defaultBand:block.defaultBand,
    progressionMode:profile.progressionMode,
+   trainingMethod:block.trainingMethod,
+   densityProtocol:block.densityProtocol,
+   progressionSpecId:block.progressionSpecId,
    fatigueCost:profile.fatigueCost,
    muscleGroups:profile.muscleGroups,
    effectiveSetWeight:profile.effectiveSetWeight,
@@ -904,7 +909,7 @@ function WeeklyReview({sessions}:{sessions:SessionSummary[]}){
 }
 function Reports({refresh}:{refresh:number}){
  const [offset,setOffset]=useState(0),[copied,setCopied]=useState(false),[selected,setSelected]=useState<string|null>(null),[showWeekly,setShowWeekly]=useState(false);
- const sessions=getSessions().sort((a,b)=>b.date-a.date),weekStart=Date.now()-7*86400000,weekSessions=sessions.filter(s=>s.date>=weekStart),weekReps=weekSessions.reduce((a,s)=>a+s.totalReps,0),weekEmom=weekSessions.reduce((a,s)=>a+s.emomReps,0),best=weekSessions.reduce((m,s)=>Math.max(m,s.bestSkillSeconds),0),report=makeWeeklyReport(offset);
+ const sessions=getSessions().sort((a,b)=>b.date-a.date),weekStart=Date.now()-7*86400000,weekSessions=sessions.filter(s=>s.date>=weekStart),weekReps=weekSessions.reduce((a,s)=>a+s.totalReps,0),weekEmom=weekSessions.reduce((a,s)=>a+s.emomReps,0),best=weekSessions.reduce((m,s)=>Math.max(m,s.bestSkillSeconds),0),weeklyIntelligence=buildCoachWeeklyReport(sessions,currentPhase(),Date.now()-offset*7*86400000),report=formatCoachWeeklyReport(weeklyIntelligence);
  const copy=async()=>{try{await navigator.clipboard.writeText(report);setCopied(true);setTimeout(()=>setCopied(false),1200)}catch{}};
  return <div>
   <div className="eyebrow">PROGRESSO</div><h1>Reports</h1>
@@ -915,6 +920,7 @@ function Reports({refresh}:{refresh:number}){
    <div className="flex items-end justify-between gap-3"><div><div className="section-kicker">RECENT COMPLETED WORKOUTS</div><p className="mt-1 text-[9px] text-zinc-600">Apri una sessione per rivedere esecuzione e report Coach.</p></div><span className="tag">LAST {Math.min(7,sessions.length)}</span></div>
    <div className="mt-3 grid gap-2">{sessions.slice(0,7).map(s=><button key={s.id} onClick={()=>{track("session_detail_opened",{day:s.day});setSelected(s.id)}} className={`history-card text-left ${selected===s.id?"selected":""}`}><div><b>{s.day}</b><span>{new Date(s.date).toLocaleDateString('it-IT')}</span></div><span className="tabular-nums">{formatClock(s.durationSec)} · {s.totalReps} reps · {s.emomReps} EMOM · <b>{scoreSessionSignals(s).status}</b></span></button>)}{!sessions.length&&<p className="mt-3 text-xs text-zinc-600">Nessuna sessione completata.</p>}</div>
   </div>
+  <div className="mt-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4"><div className="flex items-start justify-between gap-3"><div><div className="section-kicker">COACH WEEKLY INTELLIGENCE</div><div className="mt-1 text-lg font-extrabold">{weeklyIntelligence.headline}</div><p className="mt-1 text-[9px] leading-4 text-zinc-500">{weeklyIntelligence.summary}</p></div><span className="tag">{weeklyIntelligence.adherencePct.toFixed(0)}% ADHERENCE</span></div><div className="mt-4 grid gap-2 sm:grid-cols-2">{weeklyIntelligence.actions.slice(0,4).map((a,i)=><div key={i} className="rounded-xl border border-line bg-panel p-3"><div className="text-[8px] font-extrabold tracking-[.1em] text-violet2">{a.priority}</div><div className="mt-1 text-[10px] font-bold text-zinc-200">{a.title}</div><div className="mt-1 text-[9px] leading-4 text-zinc-600">{a.detail}</div></div>)}</div></div>
   <WeeklyReview sessions={weekSessions}/>
   <div className="mt-6 rounded-2xl border border-line bg-panel p-4"><div className="section-kicker">TIMELINE ALLENAMENTO</div><div className="mt-3 grid gap-2">{sessions.slice(0,12).map(s=><div key={s.id} className="history-row"><span>{new Date(s.date).toLocaleDateString('it-IT')}</span><strong>{dayLabel(s.day)}</strong><span>{formatClock(s.durationSec)} · {s.totalReps} reps</span></div>)}{!sessions.length&&<p className="text-xs text-zinc-600">Nessuna attività ancora.</p>}</div></div>
   <div className="mt-6 rounded-2xl border border-line bg-panel p-4"><div className="flex items-center justify-between gap-3"><div><div className="section-kicker">ESPORTA COACH</div><div className="mt-1 text-[9px] text-zinc-600">Report settimanale per il Coach.</div></div><button className="secondary-cta !py-2" onClick={()=>setShowWeekly(v=>!v)}>{showWeekly?"NASCONDI":"VEDI"}</button></div>{showWeekly&&<><div className="mt-4 flex gap-2 overflow-x-auto pb-1">{[0,1,2,3,4].map(n=><button key={n} onClick={()=>setOffset(n)} className={`rounded-lg border px-3 py-2 text-[9px] font-bold whitespace-nowrap ${offset===n?"border-violet-500/40 bg-violet-500/10 text-violet2":"border-line bg-panel2 text-zinc-600"}`}>{n===0?"QUESTA SETTIMANA":`WEEK -${n}`}</button>)}</div><pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-panel2 p-3 font-sans text-[9px] leading-5 text-zinc-400">{report}</pre><div className="mt-3 grid grid-cols-2 gap-2"><button className="primary-cta" onClick={copy}>{copied?"COPIATO":"COPIA"}</button><button className="secondary-cta" onClick={()=>download(report,`weekly-coach-report-${offset}.txt`)}><Download size={14}/>ESPORTA</button></div></>}</div>
@@ -1322,7 +1328,7 @@ function StaticSkill({block,day,onComplete,onStarted,sound,vibration,existing,on
 
 function parseTargetRange(target:string){const m=String(target||"").match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);if(!m)return null;return{min:Number(m[1]),max:Number(m[2])};}
 function proposeTargetProgression(block:ExerciseBlock,log:WorkoutLog,session?:SessionSummary):Omit<CoachProposal,"id"|"date">|null{
- if(log.status!=="complete")return null;
+ if(log.status!=="complete"||block.trainingMethod==="DENSITY_5X70")return null;
  const criteria=criteriaForBlock(block);
  const history=currentVariantLogs(block).filter(x=>x.date<=log.date);
  const required=Math.max(2,criteria.consecutiveSessions||2);
@@ -1333,11 +1339,12 @@ function proposeTargetProgression(block:ExerciseBlock,log:WorkoutLog,session?:Se
  const decision=decideExposure(block,coachingRecordForLog(log),criteria);
  if(decision.decision!=="PROGRESS")return null;
  const range=parseTargetRange(block.target); if(!range)return null;
+ const isStatic=block.trainingMethod==="STATIC_HOLD"||block.kind==="SKILL_STATIC"||block.previousMode==="seconds";
  const step=block.kind==="EMOM"?1:(range.max>=30?5:1);
- const nextMin=Number((range.min+step).toFixed(1));
- const nextMax=Number((range.max+step).toFixed(1));
+ const nextMin=isStatic?range.min:Number((range.min+step).toFixed(1));
+ const nextMax=Number((range.max+(isStatic?1:step)).toFixed(1));
  const suffix=block.kind==="SKILL_STATIC"?"s":"";
- return {type:"target",exerciseId:block.id,title:`Progress target — ${block.name}`,detail:`The upper target was reached across ${required} consecutive comparable exposures with adequate RIR/stability/readiness.`,from:block.target,to:`${nextMin}–${nextMax}${suffix}`,reason:`${required} consecutive exposures qualified on the same prescription; no progression is based on a single session.`,status:"pending",sessionId:log.id};
+ return {type:"target",exerciseId:block.id,title:"Progress target — "+block.name,detail:"The upper target was reached across "+required+" consecutive comparable exposures with adequate RIR/stability/readiness.",from:block.target,to:nextMin+"–"+nextMax+suffix,reason:required+" consecutive exposures qualified on the same prescription; no progression is based on a single session.",status:"pending",sessionId:log.id};
 }
 
 function CoachProposalPanel({session}:{session:SessionSummary}){
@@ -1351,6 +1358,8 @@ function CoachProposalPanel({session}:{session:SessionSummary}){
      if(!block||log.status!=="complete")continue;
      const targetProposal=proposeTargetProgression(block,log,session);
      if(targetProposal&&!current.some(p=>p.sessionId===targetProposal.sessionId&&p.exerciseId===targetProposal.exerciseId&&p.type===targetProposal.type&&p.to===targetProposal.to))saveCoachProposal(targetProposal);
+     const densityProposal=proposeDensityRestProgression(block,log,getLogs());
+     if(densityProposal&&!current.some(p=>p.sessionId===densityProposal.sessionId&&p.exerciseId===densityProposal.exerciseId&&p.type===densityProposal.type&&p.to===densityProposal.to))saveCoachProposal(densityProposal);
      const currentName=currentVariantFor(block.id,PROGRESSIONS[block.id]?.current||block.name);
      const currentVariant=getVariant(block.id);
      const currentVariantId=currentVariant?.variantId||block.id;
@@ -1390,7 +1399,8 @@ function CoachProposalPanel({session}:{session:SessionSummary}){
      nextVariantId=p.variantId||ladder[index]?.id||p.to;
      variantState={exerciseId:block.id,variantId:nextVariantId,variantName:p.to,step:index,status:"promoted",updatedAt:Date.now(),lastCoachAction:"promote"};
    }
-   const override={exerciseId:block.id,variantId:nextVariantId,catalogExerciseId:block.catalogExerciseId,name:p.type==="variant"?p.to:block.name,kind:block.kind,target:p.type==="target"?p.to:block.target,sets:block.sets,rest:block.rest,minutes:block.minutes,bandOptions:block.bandOptions,defaultBand:block.defaultBand,updatedAt:Date.now(),previous};
+   const nextRest=p.type==="rest"?Number(String(p.to).replace(/\D/g,"")):block.rest;
+   const override={exerciseId:block.id,variantId:nextVariantId,catalogExerciseId:block.catalogExerciseId,name:p.type==="variant"?p.to:block.name,kind:block.kind,target:p.type==="target"?p.to:block.target,sets:block.sets,rest:nextRest,minutes:block.minutes,bandOptions:block.bandOptions,defaultBand:block.defaultBand,updatedAt:Date.now(),previous};
    const accepted=acceptCoachProposalAtomically(p.id,override,variantState,{type:p.type==="variant"?"progression":"program",exerciseId:p.exerciseId,title:`Proposal accepted — ${p.title}`,detail:`${p.reason} Applied to future sessions.`,from:p.from,to:p.to});
    if(accepted.changed){
      try{

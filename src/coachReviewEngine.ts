@@ -5,6 +5,7 @@ import { weeklyWorkload } from './workloadEngine';
 import { weeklyStimulusActual, compareStimulusToBudget, adaptiveDecision, phaseStimulusTarget } from './adaptiveStimulusEngine';
 import { analyzeHypertrophyResponse } from './hypertrophyResponseEngine';
 import { allSkillReadiness } from './skillPerformanceEngine';
+import { detectPlateaus } from './plateauEngine';
 
 export type ReviewTone = 'GOOD'|'CAUTION'|'PRIORITY'|'RECOVERY';
 export interface CoachReview {
@@ -52,12 +53,14 @@ export function buildCoachReview(sessions:SessionSummary[], phase:PhasePlan):Coa
   const hypertrophyResponse=analyzeHypertrophyResponse(sessions);
   const lowHypertrophyMuscles=hypertrophyResponse.filter(x=>x.status==='LOW').map(x=>x.muscle).slice(0,4);
   const skillReadiness=allSkillReadiness(sessions);
+  const plateauSignals=detectPlateaus(sessions);
   const current=latest(sessions);
-  const avgRir=current?averageDefined(current.logs.map(x=>x.result.rir)):undefined;
-  const avgFatigue=current?averageDefined(current.logs.map(x=>x.result.fatigue)):undefined;
   const reasons:string[]=[];
   const recommendations:string[]=[];
   let tone:ReviewTone='GOOD';
+  const avgRir=current?averageDefined(current.logs.map(x=>x.result.rir)):undefined;
+  const avgFatigue=current?averageDefined(current.logs.map(x=>x.result.fatigue)):undefined;
+  for(const signal of plateauSignals.slice(0,3)){ reasons.push('Plateau rilevato su '+signal.exerciseId+': '+signal.values.join(' → ')+'.'); recommendations.push(signal.reason); if(signal.recommendation==='CONSIDER_CLUSTER') tone='PRIORITY'; }
 
   if(adaptive.action==='REDUCE_SECONDARY'){tone='RECOVERY';recommendations.push(...adaptive.reasons);}
   else if(adaptive.action==='ADD_HYPERTROPHY' || lowHypertrophyMuscles.length){tone='CAUTION';recommendations.push(`Proteggi la skill prioritaria e aggiungi volume ipertrofico dove serve: ${lowHypertrophyMuscles.slice(0,3).join(', ')}.`);}

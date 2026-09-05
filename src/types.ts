@@ -114,9 +114,20 @@ export interface ProgressionSpec {
   regression?:string;
   bandMode?:BandMode;
 }
+export type TrainingMethod = "STANDARD_SETS"|"DENSITY_5X70"|"EMOM"|"LONG_SET"|"SKILL_STRENGTH"|"STATIC_HOLD";
+export interface DensityProtocol {
+  referenceMaxFraction:number;
+  referenceMaxReps?:number;
+  fixedSets:number;
+  initialRestSec:number;
+  minRestSec:number;
+  restStepSec:number;
+  maxDropoffPct:number;
+  minRir:number;
+}
 export interface ExerciseBlock {
-  id:string; catalogExerciseId?:string; kind:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; name:string; detail:string; sets?:number; minutes?:number;
-  target:string; rest:number; bandOptions?:Band[]; countdown?:boolean;
+  id:string; catalogExerciseId?:string; kind:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; trainingMethod?:TrainingMethod; densityProtocol?:DensityProtocol; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; name:string; detail:string; sets?:number; minutes?:number;
+  target:string; rest:number; progressionSpecId?:string; bandOptions?:Band[]; countdown?:boolean;
   previousMode?:"reps"|"seconds"|"emom"; microSteps?:readonly MicroStep[];
   defaultBand?:Band; day?:DayKey; sortOrder?:number;
 }
@@ -149,10 +160,13 @@ export interface PrescriptionSnapshot {
   bandOptions?:Band[];
   defaultBand?:Band;
   progressionMode?:ProgressionMode;
+  trainingMethod?:TrainingMethod;
+  densityProtocol?:DensityProtocol;
   fatigueCost?:1|2|3|4|5;
   muscleGroups?:MuscleGroup[];
   effectiveSetWeight?:number;
   gripDemand?:"none"|"low"|"moderate"|"high";
+  progressionSpecId?:string;
   capturedAt:number;
 }
 
@@ -224,6 +238,18 @@ export interface SessionSummary {
 }
 
 export interface ProgramOverride { exerciseId:string; variantId?:string; catalogExerciseId?:string; name?:string; detail?:string; kind?:BlockKind; trainingRole?:TrainingRole; priority?:TrainingPriority; progressionMode?:ProgressionMode; fatigueCost?:1|2|3|4|5; muscleGroups?:MuscleGroup[]; effectiveSetWeight?:number; gripDemand?:"none"|"low"|"moderate"|"high"; target?:string; sets?:number; rest?:number; minutes?:number; bandOptions?:Band[]; defaultBand?:Band; updatedAt:number; previous?:ProgramOverride|null; }
+
+export interface PlateauSignal {
+  exerciseId:string;
+  variantId:string;
+  exposures:number;
+  metric:string;
+  values:number[];
+  improving:boolean;
+  recommendation:"HOLD"|"CONSIDER_CLUSTER"|"CONSIDER_VARIANT";
+  reason:string;
+}
+
 export interface CoachDecision { id:string; date:number; type:"program"|"progression"|"coach"; exerciseId?:string; title:string; detail:string; from?:string; to?:string; }
 
 export interface CurrentVariantState {
@@ -276,7 +302,7 @@ export interface CoachExperiment {
 }
 
 export interface CoachProposal {
-  id:string; date:number; type:"target"|"variant"|"program_review"; exerciseId:string; variantId?:string;
+  id:string; date:number; type:"target"|"variant"|"program_review"|"rest"; exerciseId:string; variantId?:string;
   title:string; detail:string; from:string; to:string; reason:string;
   status:ProposalStatus; sessionId?:string;
   experimentId?:string;

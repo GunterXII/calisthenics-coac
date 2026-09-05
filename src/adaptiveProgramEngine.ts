@@ -4,6 +4,16 @@ import {trainingProfileForBlock} from './trainingModel';
 import {recoveryForMuscle, weeklyWorkload} from './workloadEngine';
 import {buildPeriodizedDay} from './programBuilder';
 
+function resolveDensityBlock(block:ExerciseBlock,sessions:SessionSummary[]):ExerciseBlock{
+  if(block.trainingMethod!=="DENSITY_5X70"||!block.densityProtocol)return block;
+  const logs=sessions.flatMap(s=>s.logs||[])
+    .filter(l=>l.exerciseId===block.id&&l.status==="complete"&&!l.skipped)
+    .sort((a,b)=>b.date-a.date);
+  const rest=logs.find(l=>typeof l.prescription?.restSec==="number")?.prescription?.restSec;
+  if(typeof rest!=="number"||rest<block.densityProtocol.minRestSec||rest===block.rest)return block;
+  return {...block,rest};
+}
+
 export type AdaptiveAdjustmentAction =
   | 'NONE'
   | 'PROTECT'
@@ -89,7 +99,7 @@ function muscleRecoveryFor(block:ExerciseBlock, sessions:SessionSummary[], now:n
 function capSets(block:ExerciseBlock){
   if (block.trainingRole === 'skill') return 6;
   if (block.trainingRole === 'strength') return 5;
-  if (block.trainingRole === 'hypertrophy') return 5;
+  if (block.trainingRole === 'hypertrophy') return block.trainingMethod === 'DENSITY_5X70' ? 7 : 5;
   return 4;
 }
 
@@ -104,6 +114,7 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
   const fresh = report.overallRecovery === 'FRESH' && readiness >= 75 && !lowRecovery;
 
   if (highFatigue && (profile.priority !== 'primary' || !isPrimarySkill(block))) {
+    if (block.trainingMethod === 'DENSITY_5X70') return {exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Recent workload is high; reduce one density set before shortening the prescribed recovery.',confidence:0.92};
     if (block.kind === 'EMOM' || isEndurance(block)) return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent workload is high; reduce low-priority density before cutting primary skill work.',confidence:0.90};
     if (block.sets && block.sets > 1) return {exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Recent workload/recovery is high; reduce lower-priority volume.',confidence:0.90};
   }
@@ -114,13 +125,19 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
 
   if (!performance.known) return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'No comparable completed exposure yet; establish a clean baseline before adapting volume.',confidence:0.86};
 
+  // A density/hypertrophy exposure with poor effort quality is not eligible
+  // for additional volume even when the nominal target is a placeholder range.
+  if (block.trainingMethod === 'DENSITY_5X70' &&
+      (performance.qualityGood === false || (performance.rir !== undefined && performance.rir < 1))) {
+    return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent density exposure lacks the effort/quality margin needed for more volume; consolidate before adding work.',confidence:0.90};
+  }
+
   if (performance.low) {
     if (isPrimarySkill(block)) return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; keep the skill exposure stable and avoid adding fatigue.',confidence:0.86};
     if (block.kind === 'EMOM' || isEndurance(block)) return {exerciseId:block.id,action:'REDUCE_DENSITY',setsDelta:0,minutesDelta:-1,reason:'Recent endurance output is below target; reduce density slightly instead of pushing failure.',confidence:0.84};
     return {exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Recent output is below target; repeat the prescription and rebuild quality.',confidence:0.84};
   }
-
-  if (fresh && performance.atUpper && performance.stable) {
+if (fresh && performance.atUpper && performance.stable) {
     if (phase.type === 'ENDURANCE_EMPHASIS' && (block.kind === 'EMOM' || isEndurance(block))) {
       const maxMinutes = clamp((block.minutes || 10) + 1, 5, 15);
       return {exerciseId:block.id,action:'ADD_DENSITY',setsDelta:0,minutesDelta:maxMinutes - (block.minutes || 0),reason:'Output is stable at the top of the target with adequate recovery; add one minute of sustainable density.',confidence:0.91};
@@ -148,8 +165,9 @@ function adjustBlock(block:ExerciseBlock, phase:PhasePlan, sessions:SessionSumma
 
 export function buildAdaptivePeriodizedDay(phase:PhasePlan, day:DayKey, goals:import('./types').GoalId[]|undefined, sessions:SessionSummary[], now=Date.now()):AdaptiveDayPlan {
   const base = buildPeriodizedDay({phase, day, goals});
-  const decisions:AdaptiveBlockDecision[] = base.blocks.map(block => adjustBlock(block, phase, sessions, now));
-  const blocks = base.blocks.map(block => {
+  const resolvedBase = {...base, blocks:base.blocks.map(block => resolveDensityBlock(block, sessions))};
+  const decisions:AdaptiveBlockDecision[] = resolvedBase.blocks.map(block => adjustBlock(block, phase, sessions, now));
+  const blocks = resolvedBase.blocks.map(block => {
     const decision = decisions.find(d => d.exerciseId === block.id)!;
     const next = {...block};
     if (typeof next.sets === 'number') next.sets = Math.max(1, next.sets + decision.setsDelta);
