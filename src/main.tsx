@@ -30,6 +30,7 @@ import {shouldRestAfterStandardSet,shouldRestAfterSideSet,totalSessionReps} from
 import {CoachPanel} from "./coachAiPanel";
 import {createExperimentFromProposal, reviewActiveExperiments, experimentDecisionLabel, rollbackExperiment} from "./coachExperimentEngine";
 import {dayLabel, phaseLabel, t} from "./i18n";
+import {proposeDensityRestProgression} from "./methodAwareCoaching";
 import {workoutFlowCopy, recommendedEndAction} from "./workoutFlow";
 import "./styles.css";
 
@@ -1342,26 +1343,6 @@ function proposeTargetProgression(block:ExerciseBlock,log:WorkoutLog,session?:Se
  return {type:"target",exerciseId:block.id,title:"Progress target — "+block.name,detail:"The upper target was reached across "+required+" consecutive comparable exposures with adequate RIR/stability/readiness.",from:block.target,to:nextMin+"–"+nextMax+suffix,reason:required+" consecutive exposures qualified on the same prescription; no progression is based on a single session.",status:"pending",sessionId:log.id};
 }
 
-function densityQualifies(log:WorkoutLog,block:ExerciseBlock):boolean{
- if(block.trainingMethod!=="DENSITY_5X70"||log.status!=="complete")return false;
- const target=Number(log.prescription?.targetRange||block.target), values=log.result.reps||[];
- if(!Number.isFinite(target)||target<=0||values.length<(block.densityProtocol?.fixedSets||5))return false;
- const first=values[0]||0,last=values[values.length-1]||0,minValue=Math.min(...values),dropoff=first>0?((first-last)/first)*100:100;
- const rir=log.result.rir,fatigue=log.result.fatigue;
- return minValue>=target*0.90 && dropoff<=(block.densityProtocol?.maxDropoffPct||15) && (rir===undefined||rir>=(block.densityProtocol?.minRir||1)) && (fatigue===undefined||fatigue<=3);
-}
-
-function proposeDensityRestProgression(block:ExerciseBlock,log:WorkoutLog):Omit<CoachProposal,"id"|"date">|null{
- if(block.trainingMethod!=="DENSITY_5X70"||log.status!=="complete"||!block.densityProtocol)return null;
- const history=getLogs().filter(x=>x.exerciseId===block.id&&x.status==="complete"&&!x.skipped).sort((a,b)=>a.date-b.date);
- const same=(x:WorkoutLog)=>String(x.variantId||x.exerciseId)===String(log.variantId||log.exerciseId)&&String(x.prescription?.targetRange||"")===String(log.prescription?.targetRange||"")&&(x.prescription?.sets??null)===(log.prescription?.sets??null)&&(x.prescription?.restSec??null)===(log.prescription?.restSec??null)&&(x.prescription?.kind??"")===(log.prescription?.kind??"")&&String(x.result.band||"")===String(log.result.band||"");
- const prior=history.filter(same), recent=[...prior.slice(-1),log];
- const unique=recent.filter((x,i,a)=>i===0||x.id!==a[i-1].id);
- if(unique.length<2||!unique.every(x=>densityQualifies(x,block)))return null;
- const currentRest=log.prescription?.restSec??block.rest,nextRest=Math.max(block.densityProtocol.minRestSec,currentRest-block.densityProtocol.restStepSec);
- if(nextRest>=currentRest)return null;
- return {type:"rest",exerciseId:block.id,title:"Riduci recupero — "+block.name,detail:"Due esposizioni comparabili hanno sostenuto la stessa dose. Riduci il recupero di "+block.densityProtocol.restStepSec+"s senza aumentare le reps.",from:currentRest+"s",to:nextRest+"s",reason:"La densità è la variabile di progressione: target stabile, drop-off e RIR entro i limiti.",status:"pending",sessionId:log.id};
-}
 function CoachProposalPanel({session}:{session:SessionSummary}){
  const [items,setItems]=useState<CoachProposal[]>(()=>getCoachProposals().filter(p=>p.sessionId===session.id));
  const [message,setMessage]=useState("");
@@ -1373,7 +1354,7 @@ function CoachProposalPanel({session}:{session:SessionSummary}){
      if(!block||log.status!=="complete")continue;
      const targetProposal=proposeTargetProgression(block,log,session);
      if(targetProposal&&!current.some(p=>p.sessionId===targetProposal.sessionId&&p.exerciseId===targetProposal.exerciseId&&p.type===targetProposal.type&&p.to===targetProposal.to))saveCoachProposal(targetProposal);
-     const densityProposal=proposeDensityRestProgression(block,log);
+     const densityProposal=proposeDensityRestProgression(block,log,getLogs());
      if(densityProposal&&!current.some(p=>p.sessionId===densityProposal.sessionId&&p.exerciseId===densityProposal.exerciseId&&p.type===densityProposal.type&&p.to===densityProposal.to))saveCoachProposal(densityProposal);
      const currentName=currentVariantFor(block.id,PROGRESSIONS[block.id]?.current||block.name);
      const currentVariant=getVariant(block.id);
