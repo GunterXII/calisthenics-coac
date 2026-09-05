@@ -2,7 +2,9 @@ import type {ExerciseBlock,WorkoutLog,CoachProposal} from "./types";
 
 export function densityQualifies(log:WorkoutLog,block:ExerciseBlock):boolean{
  if(block.trainingMethod!=="DENSITY_5X70"||log.status!=="complete")return false;
- const target=Number(log.prescription?.targetRange||block.target),values=log.result.reps||[];
+ const rawTarget=String(log.prescription?.targetRange||block.target);
+ const match=rawTarget.match(/\d+(?:\.\d+)?/);
+ const target=match?Number(match[0]):NaN,values=log.result.reps||[];
  if(!Number.isFinite(target)||target<=0||values.length<(block.densityProtocol?.fixedSets||5))return false;
  const first=values[0]||0,last=values[values.length-1]||0,minValue=Math.min(...values),dropoff=first>0?((first-last)/first)*100:100;
  const rir=log.result.rir,fatigue=log.result.fatigue;
