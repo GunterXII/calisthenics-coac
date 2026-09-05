@@ -40,7 +40,6 @@ const pullWarmup=[
  {id:"pl5",name:"Light band curl + elbow prep",dose:"1–2 × 15–20"},
 ];
 
-import { PROGRESSION_SPECS, PROGRESSIONS, getProgressionLadder, getProgressionSpec } from './progressionRegistry';
 export const PROGRAM:Record<DayKey,DayProgram>={
  Monday:{title:"PUSH A",subtitle:"Pike strength • Push volume",warmup:pushWarmup,blocks:[
   {id:"pike",kind:"PERFORMANCE",trainingRole:"strength",priority:"primary",name:"Pike Push-up",detail:"3 × 6–10 • RIR 1–2 • use the current progression rung",sets:3,target:"6–10",rest:180,previousMode:"reps"},
@@ -118,11 +117,4 @@ for (const day of Object.keys(PROGRAM) as DayKey[]) {
   };
 }
 
-export function getProgressionLadder(exerciseId:string){
-  const key=exerciseId==="pike-feet"?"pike":exerciseId;
-  return PROGRESSION_SPECS[key]?.ladder||[];
-}
-export function getProgressionSpec(exerciseId:string){
-  const key=exerciseId==="pike-feet"?"pike":exerciseId;
-  return PROGRESSION_SPECS[key];
-}
+export { PROGRESSION_SPECS, PROGRESSIONS, getProgressionLadder, getProgressionSpec } from './progressionRegistry';
