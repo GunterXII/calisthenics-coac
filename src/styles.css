@@ -39,24 +39,6 @@ select{background:#151519;border:1px solid #303038;border-radius:10px;color:whit
 .workout-context-progress-bar span{display:block;height:100%;border-radius:999px;background:#8b5cf6}
 @media(min-width:700px){.workout-context-progress-bar{width:120px}}
 
-.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
-.nav-item-active{color:#b79cff;background:rgba(184,245,0,.07)}
-.nav-item:focus-visible{outline:2px solid rgba(215,255,90,.72);outline-offset:-2px}
-.workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
-.workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
-.workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
-.workout-context-progress-bar span{display:block;height:100%;border-radius:999px;background:#8b5cf6}
-@media(min-width:700px){.workout-context-progress-bar{width:120px}}
-
-.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;margin:7px 2px;color:#5f5f68;font-size:8px;font-weight:800;letter-spacing:.12em;transition:color .15s,background .15s}
-.nav-item-active{color:#b79cff;background:rgba(184,245,0,.07)}
-.nav-item:focus-visible{outline:2px solid rgba(215,255,90,.72);outline-offset:-2px}
-.workout-context{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0}
-.workout-context-progress{display:flex;align-items:center;gap:8px;color:#686873;font-size:8px;font-weight:800;letter-spacing:.08em}
-.workout-context-progress-bar{width:82px;height:4px;border-radius:999px;background:#1a1a20;overflow:hidden}
-.workout-context-progress-bar span{display:block;height:100%;border-radius:999px;background:#8b5cf6}
-@media(min-width:700px){.workout-context-progress-bar{width:120px}}
-
 /* ─────────────────────────────────────────────────────────────
    PREMIUM ATHLETE UI LAYER — visual only
    No interaction, data, calculation or workout behavior changes.
@@ -101,7 +83,7 @@ h1{font-size:clamp(42px,8vw,62px);line-height:.94;letter-spacing:-.055em}
 [class~="bg-panel2"]{background:var(--ui-surface-2)}
 [class~="border-line"]{border-color:var(--ui-border)}
 
-/* Purple is reserved for focus, progression and important Coach context. */
+/* Accent is reserved for focus, progression and important Coach context. */
 [class~="bg-violet-500/5"]{background:rgba(184,245,0,.025) !important}
 [class~="border-violet-500/10"]{border-color:rgba(184,245,0,.08) !important}
 [class~="border-violet-500/15"]{border-color:rgba(184,245,0,.10) !important}
@@ -220,7 +202,7 @@ button:focus-visible,a:focus-visible{outline:2px solid rgba(215,255,90,.74);outl
 
 .effort-panel{background:#101013 !important}
 .effort-panel button{min-height:46px}
-.effort-panel [aria-pressed="true"]{border-color:rgba(215,255,90,.82);background:rgba(184,245,0,.10);color:#D7C8FF}
+.effort-panel [aria-pressed="true"]{border-color:rgba(215,255,90,.82);background:rgba(184,245,0,.10);color:var(--ui-accent-soft)}
 .effort-panel .field-label{margin-bottom:0}
 
 /* Compact metadata rows read as information, not extra cards. */
@@ -500,4 +482,218 @@ button:disabled,input:disabled,select:disabled{opacity:.38}
 
 @media(prefers-reduced-motion:reduce){
   .primary-cta,.secondary-cta,.effort-panel button{transition:none!important}
+}
+
+
+/* =====================================================================
+   UI V1 FINAL CLEANUP — Design System + Workout Player hierarchy
+   Visual/interaction polish only. No business logic or calculations.
+   ===================================================================== */
+:root{
+  --ui-bg:#080909;
+  --ui-surface:#101211;
+  --ui-surface-2:#151715;
+  --ui-surface-3:#1A1D19;
+  --ui-border:rgba(255,255,255,.085);
+  --ui-border-strong:rgba(255,255,255,.14);
+  --ui-text:#F5F7F2;
+  --ui-muted:#92988F;
+  --ui-subtle:#70766E;
+  --ui-accent:#B8F500;
+  --ui-accent-soft:#D7FF5A;
+  --ui-danger:#FF5B5B;
+  --ui-warning:#FFBF3F;
+  --ui-success:#62D96B;
+  --player-gutter:clamp(16px,5vw,32px);
+}
+
+/* Type hierarchy: micro text is reserved for metadata, never core content. */
+body{font-size:14px}
+.sub{font-size:14px}
+.eyebrow,.section-kicker,.tag{font-size:10px}
+.field-label{font-size:10px;line-height:1.25}
+.nav-item{font-size:10px}
+.workout-context-progress{font-size:10px}
+
+/* Shared semantic primitives. */
+.ui-section{margin-top:2rem}
+.ui-section-title{font-size:16px;font-weight:900;letter-spacing:-.01em}
+.ui-section-copy{margin-top:.35rem;font-size:13px;line-height:1.55;color:var(--ui-muted)}
+.ui-meta{font-size:11px;line-height:1.45;color:var(--ui-subtle)}
+.ui-status{display:inline-flex;align-items:center;gap:6px;min-height:28px;border:1px solid var(--ui-border);border-radius:999px;padding:0 .65rem;font-size:10px;font-weight:900;letter-spacing:.06em}
+
+/* Workout player: three clearly different operating states. */
+.workout-player-shell{--player-gutter:clamp(16px,5vw,32px)}
+.workout-player-header{background:rgba(8,9,9,.94)!important}
+.workout-player-header > .h-0\.5{background:#171A16!important}
+.workout-player-header .bg-violet-500{background:var(--ui-accent)!important}
+.workout-player-content{padding-left:var(--player-gutter);padding-right:var(--player-gutter)}
+.workout-coach-note{background:rgba(184,245,0,.025)!important;border-color:rgba(184,245,0,.10)!important}
+.workout-context{padding-top:12px}
+.workout-exercise-title{font-size:clamp(38px,10vw,60px)!important;line-height:.94!important;letter-spacing:-.055em!important}
+.workout-rest-meta{font-size:11px!important;color:var(--ui-subtle)!important}
+
+/* Set/side players: value first, supporting metadata second. */
+.set-player,.side-set-player,.static-skill-player{padding-top:14px}
+.set-player > .target-panel,.side-set-player > .rounded-2xl.border{box-shadow:none}
+.set-player .counter-input,.side-set-player .counter-input{min-height:72px!important;height:72px!important;font-size:38px!important;line-height:1!important;font-variant-numeric:tabular-nums}
+.set-player .counter-btn,.side-set-player .counter-btn{min-width:48px!important;width:48px!important;height:48px!important;min-height:48px!important}
+.set-player .primary-cta,.side-set-player .primary-cta{min-height:54px;font-size:11px}
+.set-player .secondary-cta,.side-set-player .secondary-cta{min-height:50px;font-size:10px}
+.set-player .chip,.side-set-player .chip{font-size:10px}
+
+/* Keep support controls visually below the action, not competing with it. */
+.set-player > .mt-auto,.side-set-player > .mt-auto,.emom-player > .mt-auto{padding-top:32px!important}
+.effort-panel{border-radius:18px!important;background:rgba(16,18,17,.82)!important}
+.effort-panel .field-label{font-size:10px}
+.effort-panel .effort-option,.effort-panel .effort-option-active{min-height:46px}
+
+/* Rest state: one decision, one timer, one next target. */
+.rest-player{min-height:100%}
+.rest-player .field-label{font-size:10px}
+.rest-player > .text-center .text-sm{font-size:14px}
+.rest-player svg circle:last-child{color:var(--ui-accent)!important}
+.rest-player .text-6xl{font-size:clamp(68px,18vw,96px)!important;line-height:.9!important}
+.rest-player button{min-height:48px;font-size:10px}
+
+/* EMOM state: timer dominates; supporting controls stay quiet. */
+.emom-player .text-7xl{font-size:clamp(74px,21vw,116px)!important;line-height:.86!important;letter-spacing:-.075em!important}
+.emom-player .field-label{font-size:10px}
+.emom-player .counter-input{min-height:72px!important}
+.emom-player .primary-cta{min-height:54px}
+
+/* Readability: do not let utility-sized text carry essential information. */
+.workout-player-shell .text-\[8px\],
+.workout-player-shell .text-\[9px\]{line-height:1.35}
+.workout-player-shell .text-zinc-600{color:#7C8279!important}
+.workout-player-shell .text-zinc-500{color:#9AA098!important}
+
+/* Keyboard/touch ergonomics. */
+button,.counter-btn,.mini-btn{touch-action:manipulation}
+.workout-player-shell button:focus-visible,
+.workout-player-shell input:focus-visible,
+.workout-player-shell select:focus-visible{outline:2px solid var(--ui-accent-soft)!important;outline-offset:2px}
+
+@media(max-width:700px){
+  .workout-player-shell .workout-player-content{padding-top:18px}
+  .workout-exercise-title{font-size:clamp(38px,11vw,54px)!important}
+  .set-player .counter-input,.side-set-player .counter-input{min-height:68px!important;height:68px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ========================================================================
+   PHASE 3.1 — WORKOUT PLAYER HIERARCHY
+   UI only. Keep the execution path visually dominant and the evidence
+   collected after the action visually secondary.
+   ======================================================================== */
+.set-player-target{display:block}
+.set-player-reps{position:relative}
+.set-player-reps .field-label{display:block;color:#7f857c;font-size:9px}
+.set-player-actions{width:100%}
+.set-player-actions .primary-cta{box-shadow:0 8px 30px rgba(0,0,0,.18)}
+
+.side-set-player > .rounded-2xl:first-child{
+  background:linear-gradient(180deg,rgba(184,245,0,.035),rgba(184,245,0,.012))!important;
+}
+.side-set-player > .rounded-2xl:first-child .field-label{color:#7f857c}
+.side-set-player > .rounded-2xl:first-child > div > div:last-child .field-label{font-size:9px}
+
+/* When the athlete is actively logging, the target reference becomes quiet.
+   It remains available but never competes with the input. */
+.set-player .set-player-target .target-panel{opacity:.94}
+.set-player .set-player-reps .counter-input,
+.side-set-player .counter-input{
+  color:var(--ui-text)!important;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Logged-set chips are an audit trail, not navigation. */
+.set-player > .flex.flex-wrap,
+.side-set-player > .flex.flex-wrap,
+.emom-player > .flex.flex-wrap{margin-top:18px!important}
+
+/* Effort should read as optional context after the main action. */
+.workout-player-shell .effort-panel{opacity:.94}
+.workout-player-shell .effort-panel .field-label{letter-spacing:.11em}
+
+/* EMOM: keep timer visually dominant and the configuration panel quieter. */
+.emom-player > .text-center > .text-7xl{
+  margin-top:10px;
+  text-shadow:0 8px 40px rgba(0,0,0,.22);
+}
+.emom-player > .text-center > .rounded-2xl{
+  background:#0d100e!important;
+  border-color:rgba(255,255,255,.065)!important;
+}
+.emom-player > .mt-7.rounded-2xl{
+  background:#101311!important;
+  border-color:rgba(255,255,255,.07)!important;
+}
+
+/* Recovery remains one-screen focused. */
+.rest-player .field-label{letter-spacing:.14em}
+.rest-player .text-sm{letter-spacing:-.01em}
+.rest-player button{background:#101210}
+
+/* Mobile: compress supporting context before shrinking the primary action. */
+@media(max-width:700px){
+  .set-player-target .target-panel{padding:12px 14px!important}
+  .set-player-reps{margin-top:28px!important}
+  .set-player-reps .counter-input{width:min(160px,42vw)!important}
+  .set-player-actions{margin-top:20px!important}
+  .side-set-player > .rounded-2xl:first-child{padding:14px!important}
+  .emom-player > .text-center > .rounded-2xl{padding:14px!important}
+  .emom-player > .text-center > .text-7xl{margin-top:12px}
+}
+
+/* Today + Plan V1: answer one question per screen and reduce visual competition. */
+.today-focus-copy,.today-section-copy,.plan-day-copy{margin-top:.35rem;color:#6F756D;font-size:11px;line-height:1.55}
+.today-focus-stats{display:flex;flex-wrap:wrap;gap:.45rem 1rem;margin-top:.8rem;color:#7C8279;font-size:8px;font-weight:900;letter-spacing:.08em}
+.session-total{color:#666D64;font-size:9px;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+.session-row-head,.plan-exercise-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem}
+.session-row-detail,.plan-exercise-detail{margin-top:.4rem;color:#6F756D;font-size:10px;line-height:1.55}
+.session-coach-note,.plan-coach-note{margin-top:.4rem;color:#B6BDAC;font-size:8px;font-weight:800;line-height:1.5;letter-spacing:.04em}
+.session-coach-note span,.plan-coach-note span{color:#61685F}
+.plan-prescription-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.65rem}
+.plan-day-copy{max-width:34rem}
+.plan-validation-wrap{opacity:.96}
+@media(max-width:700px){
+  .today-focus-stats{gap:.35rem .8rem}
+  .session-row-head,.plan-exercise-head{gap:.5rem}
+  .plan-day-copy,.today-focus-copy,.today-section-copy{font-size:10px}
+}
+
+/* ========================================================================
+   PHASE 4 — SEMANTIC COLOR + SETTINGS SHELL
+   Keep product meaning independent from the historical purple token names.
+   ======================================================================== */
+:root{
+  --ui-accent-strong:#A9DE00;
+  --ui-accent-muted:rgba(184,245,0,.16);
+  --ui-accent-subtle:rgba(184,245,0,.08);
+}
+.text-accent{color:var(--ui-accent)!important}
+.text-accent-soft{color:var(--ui-accent-soft)!important}
+.bg-accent-soft{background:rgba(184,245,0,.025)!important}
+.bg-accent-muted{background:var(--ui-accent-muted)!important}
+.bg-accent-strong{background:var(--ui-accent-strong)!important}
+.border-accent{border-color:rgba(184,245,0,.10)!important}
+.border-accent-subtle{border-color:var(--ui-accent-subtle)!important}
+.border-accent-strong{border-color:rgba(184,245,0,.38)!important}
+
+.settings-page{padding-bottom:32px}
+.settings-section{margin-top:28px;padding-top:24px;border-top:1px solid var(--ui-border)}
+.settings-section:first-of-type{margin-top:28px}
+.settings-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.settings-section-copy{margin-top:6px;max-width:40rem;color:var(--ui-muted);font-size:11px;line-height:1.55}
+.settings-section > .mt-5,.settings-section > .mt-8{margin-top:16px!important}
+.settings-section > .border-t{border-top:0!important;padding-top:0!important}
+.settings-section-last{padding-bottom:24px}
+.settings-page .settings-section > .rounded-2xl:first-of-type{box-shadow:none}
+@media(max-width:700px){
+  .settings-section{margin-top:24px;padding-top:20px}
+  .settings-section-copy{font-size:10px}
 }

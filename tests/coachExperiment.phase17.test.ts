@@ -9,7 +9,7 @@ class MemoryStorage { private m=new Map<string,string>(); getItem(k:string){retu
 clearCoachExperiments(); localStorage.removeItem('cc-v15-coach-proposals');
 const proposal=saveCoachProposal({type:'target',exerciseId:'push-up',title:'Aumenta push-up',detail:'',from:'3 × 15',to:'4 × 15',reason:'Top del range stabile',status:'pending',sessionId:'s1'});
 const experiment=createExperimentFromProposal(proposal,'3 × 15');
-updateCoachExperiment(experiment.id,{startedAt:50});
+updateCoachExperiment(experiment.id,{startedAt:50,appliedAt:50});
 assert.equal(experiment.status,'active');
 assert.equal(experiment.expectedObservations,2);
 

@@ -10,7 +10,7 @@ assert.equal(getProgressionSpec("touch")?.targetMaxIncrement,1);
 assert.equal(getProgressionLadder("pike")[0].id,"pike");
 const touchBlock=PROGRAM.Tuesday.blocks.find(b=>b.id==="touch")!;
 const touchSpec=progressionSpecForBlock(touchBlock);
-assert.equal(nextTargetFromSpec("2–4 sec",touchSpec,touchBlock.kind),"3–5 sec");
+assert.equal(nextTargetFromSpec("2–4 sec",touchSpec,touchBlock.kind),"2–5 sec");
 
 const legacy={id:"l1",date:1,day:"Tuesday",exerciseId:"touch",exerciseName:"Front Touch",kind:"SKILL_STATIC",status:"complete",result:{seconds:[4,4,4,4]}} as unknown as WorkoutLog;
 assert.equal("sessionId" in legacy,false);

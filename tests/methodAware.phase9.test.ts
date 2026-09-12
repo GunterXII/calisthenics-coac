@@ -11,11 +11,11 @@ const dips=monday.program.blocks.find(b=>b.id==="dips-volume-a")!;
 
 assert.equal(push.trainingMethod,"DENSITY_5X70");
 assert.equal(push.sets,5);
-assert.equal(push.target,"28");
+assert.equal(push.target,"28–28");
 assert.equal(push.rest,120);
 assert.equal(push.densityProtocol?.fixedSets,5);
 assert.equal(dips.trainingMethod,"DENSITY_5X70");
-assert.equal(dips.target,"32");
+assert.equal(dips.target,"32–32");
 assert.equal(dips.rest,120);
 
 const mondayAgain=buildAdaptivePeriodizedDay(phase,"Monday",["oap","flpu","front_lever_touch","pushups","dips"],[
@@ -30,7 +30,7 @@ const mondayAgain=buildAdaptivePeriodizedDay(phase,"Monday",["oap","flpu","front
   } as SessionSummary
 ]);
 const push2=mondayAgain.program.blocks.find(b=>b.id==="pushup-volume")!;
-assert.equal(push2.target,"28");
+assert.equal(push2.target,"28–28");
 assert.equal(push2.sets,5);
 
 console.log("method aware phase 9: ok");

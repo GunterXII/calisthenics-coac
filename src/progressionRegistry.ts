@@ -818,7 +818,9 @@ export function nextTargetFromSpec(currentTarget:string,spec:ProgressionSpec,kin
   if(!m)return currentTarget;
   const minV=Number(m[1]),maxV=Number(m[2]),inc=spec.targetProgression.maxIncrement??1;
   const isSeconds=currentTarget.toLowerCase().includes("sec")||kind==="SKILL_STATIC";
-  if(isSeconds)return `${minV+inc}–${maxV+inc} sec`;
+  // Static-hold progression advances the ceiling first. This preserves the
+  // athlete's established minimum hold while expanding the target window.
+  if(isSeconds)return `${minV}–${maxV+inc} sec`;
   return kind==="EMOM"?`${minV+inc}–${maxV+inc}/min`:`${minV+inc}–${maxV+inc}`;
 }
 

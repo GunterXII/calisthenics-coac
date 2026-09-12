@@ -61,6 +61,87 @@ function parseTarget(target:string):{min:number;max:number;kind:'reps'|'seconds'
   return undefined;
 }
 
+interface SetAwarePerformance {
+  known:boolean;
+  expectedSets:number;
+  actualSets:number;
+  completionRatio:number;
+  firstSet?:number;
+  lastSet?:number;
+  dropoffPct:number;
+  targetHitRate:number;
+  avgRir?:number;
+  spillover:boolean;
+  stableAcrossSessions:boolean;
+}
+
+function setAwarePerformance(block:ExerciseBlock, sessions:SessionSummary[], now:number):SetAwarePerformance {
+  const logs=recentLogsForBlock(block,sessions,now).slice(-2);
+  if(!logs.length)return{known:false,expectedSets:block.sets||0,actualSets:0,completionRatio:1,dropoffPct:0,targetHitRate:1,spillover:false,stableAcrossSessions:true};
+  const target=parseTarget(block.target);
+  if(!target || target.kind==='emom')return{known:false,expectedSets:block.sets||0,actualSets:0,completionRatio:1,dropoffPct:0,targetHitRate:1,spillover:false,stableAcrossSessions:true};
+  const snapshots=logs.map(log=>{
+    const values=target.kind==='seconds'?(log.result.seconds||[]):(log.result.reps||[]);
+    const expected=Number(log.prescription?.sets||block.sets||values.length||1);
+    const first=values[0];
+    const last=values[values.length-1];
+    const drop=first&&last&&first>0?Math.max(0,1-last/first):0;
+    const hitCount=values.filter(v=>v>=target.min).length;
+    const rir=typeof log.result.rir==='number'?log.result.rir:undefined;
+    const preceding=sessions.find(s=>s.id===log.sessionId)?.logs || [];
+    const idx=preceding.findIndex(l=>l.id===log.id);
+    const earlier=idx>=0?preceding.slice(0,idx):[];
+    const highFatigueEarlier=earlier.some(l=>(typeof l.result.fatigue==='number'&&l.result.fatigue>=4)||(typeof l.result.rir==='number'&&l.result.rir<=1));
+    const spill=highFatigueEarlier && ((drop>=0.15)||(values.length<expected)||hitCount/Math.max(1,expected)<0.75);
+    return{expected,actual:values.length,first,last,drop,hitCount,rir,spill};
+  });
+  const latest=snapshots[snapshots.length-1];
+  const targetHitRate=latest.hitCount/Math.max(1,latest.expected);
+  const completionRatio=latest.actual/Math.max(1,latest.expected);
+  const rirValues=snapshots.map(x=>x.rir).filter((x):x is number=>typeof x==='number');
+  const avgRir=rirValues.length?average(rirValues):undefined;
+  const values=snapshots.map(x=>x.actual&&x.first?x.first:0).filter(v=>v>0);
+  const stableAcrossSessions=values.length<2 || Math.abs(values[1]-values[0])<=Math.max(target.max*0.15,1);
+  return{
+    known:true,
+    expectedSets:latest.expected,
+    actualSets:latest.actual,
+    completionRatio,
+    firstSet:latest.first,
+    lastSet:latest.last,
+    dropoffPct:latest.drop,
+    targetHitRate,
+    avgRir,
+    spillover:latest.spill,
+    stableAcrossSessions,
+  };
+}
+
+function setAwareAdjustment(block:ExerciseBlock, sessions:SessionSummary[], now:number):AdaptiveBlockDecision|undefined{
+  if(block.trainingMethod==='DENSITY_5X70'||block.kind==='EMOM')return undefined;
+  const p=setAwarePerformance(block,sessions,now);
+  if(!p.known)return undefined;
+  const prescribed=Math.max(1,block.sets||p.expectedSets);
+  const repeatedSetFailure=(p.actualSets<p.expectedSets || p.targetHitRate<0.75);
+  const hardDrop=p.dropoffPct>=0.25;
+  const moderateDrop=p.dropoffPct>=0.18;
+  const lowRir=p.avgRir!==undefined&&p.avgRir<=1;
+  const isLongSet=block.trainingMethod==='LONG_SET'||block.id.endsWith('-long');
+
+  if(p.spillover && (block.priority==='support'||block.priority==='secondary') && repeatedSetFailure && lowRir && prescribed>1){
+    return{exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Later-set output is falling after high-fatigue work earlier in the session; trim one lower-priority set instead of treating total session reps as capacity.',confidence:.93};
+  }
+  if((hardDrop || (repeatedSetFailure&&lowRir)) && prescribed>1){
+    return{exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:isLongSet
+      ?'Repeated long-set output shows a large second-set drop-off; treat the first set as capacity and remove one costly repeat.'
+      :'Repeated-set capacity is below the prescribed exposure; reduce one set so the session dose reflects sustainable per-set performance.',confidence:.91};
+  }
+  if(moderateDrop && lowRir && prescribed>=4){
+    return{exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Per-set output is drifting down across the exposure; hold the current dose before adding volume.',confidence:.88};
+  }
+  return undefined;
+}
+
 function previousPerformance(block:ExerciseBlock, sessions:SessionSummary[], now:number){
   const logs = recentLogsForBlock(block, sessions, now).slice(-2);
   const target = parseTarget(block.target);
@@ -147,6 +228,14 @@ function adjustBlock(block:ExerciseBlock,phase:PhasePlan,sessions:SessionSummary
     return{exerciseId:block.id,action:'REDUCE_VOLUME',setsDelta:-1,minutesDelta:0,reason:'Fatigue is elevated; remove one set from a lower-priority block while preserving higher-priority work.',confidence:.92};
   }
 
+  const setAware=setAwareAdjustment(block,sessions,now);
+  if(setAware){
+    if(setAware.action==='REDUCE_VOLUME' && isPrimarySkill(block)){
+      return{exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'Per-set capacity is uneven; protect primary skill quality while holding the exposure stable.',confidence:.90};
+    }
+    return setAware;
+  }
+
   if(lowRecovery&&isPrimarySkill(block))return{exerciseId:block.id,action:'PROTECT',setsDelta:0,minutesDelta:0,reason:`${worst!.muscle} recovery is ${Math.round(worst!.recoveryPct)}%; protect skill quality and do not add volume.`,confidence:.94};
   if(!performance.known)return{exerciseId:block.id,action:'HOLD',setsDelta:0,minutesDelta:0,reason:'No comparable completed exposure yet; establish a clean baseline before adapting volume.',confidence:.86};
   if(performance.low){
@@ -157,7 +246,7 @@ function adjustBlock(block:ExerciseBlock,phase:PhasePlan,sessions:SessionSummary
   }
   if(fresh&&performance.atUpper&&performance.stable){
     if(phase.type==='ENDURANCE_EMPHASIS'&&(block.kind==='EMOM'||isEndurance(block))){const maxMinutes=clamp((block.minutes||10)+1,5,15);return{exerciseId:block.id,action:'ADD_DENSITY',setsDelta:0,minutesDelta:maxMinutes-(block.minutes||0),reason:'Output is stable at the top of the target with adequate recovery; add one minute of sustainable density.',confidence:.91};}
-    if(block.trainingMethod!=='DENSITY_5X70'&&block.trainingRole==='hypertrophy'&&block.sets&&block.sets<capSets(block))return{exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Top of the rep range is repeatable with good recovery; add one productive hypertrophy set.',confidence:.89};
+    if(block.trainingMethod!=='DENSITY_5X70'&&block.trainingMethod!=='LONG_SET'&&block.trainingRole==='hypertrophy'&&block.sets&&block.sets<capSets(block))return{exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Top of the rep range is repeatable with good recovery; add one productive hypertrophy set.',confidence:.89};
     if((block.trainingRole==='strength'||block.trainingRole==='skill')&&block.sets&&block.sets<capSets(block)&&phase.type!=='REALIZATION')return{exerciseId:block.id,action:'ADD_VOLUME',setsDelta:1,minutesDelta:0,reason:'Performance is stable at the top of the target with adequate recovery; add one high-quality exposure.',confidence:.88};
   }
   if(block.trainingMethod!=='DENSITY_5X70'&&block.trainingRole==='hypertrophy'&&block.sets&&block.sets<capSets(block)){

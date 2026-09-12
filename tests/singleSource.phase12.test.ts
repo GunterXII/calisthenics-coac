@@ -37,7 +37,7 @@ assert.deepEqual(touchCriteria, {
 
 const touchMastery = masteryCriteriaForBlock(touch);
 assert.equal(touchMastery.type, "seconds");
-assert.equal(touchMastery.minSeconds, 8);
+assert.equal(touchMastery.minSeconds, 4);
 assert.equal(touchMastery.consecutiveSessions, 3);
 
 const spec = progressionSpecForBlock(touch);

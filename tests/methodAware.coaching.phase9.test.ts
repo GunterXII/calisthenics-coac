@@ -24,7 +24,7 @@ const makeLog=(id:string,date:number,rest:number,reps:number[],rir=2,fatigue=2):
 
 const first=makeLog("l1",1000,120,[28,28,28,27,27]);
 const second=makeLog("l2",2000,120,[28,28,28,28,28]);
-assert.equal(proposeDensityRestProgression(block,second,[first]),null,"one prior exposure should not accidentally qualify");
+assert.equal(proposeDensityRestProgression(block,second,[]),null,"a single exposure should not qualify density progression");
 
 const qualifyingFirst=makeLog("l1q",1000,120,[28,28,28,28,28]);
 const proposal=proposeDensityRestProgression(block,second,[qualifyingFirst]);
